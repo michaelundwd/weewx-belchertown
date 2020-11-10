@@ -2279,7 +2279,7 @@ input:checked + .slider:before {
 	}
         
     .forecast-conditions {
-        min-height: 80px;
+        min-height: 90px;
     }
     
     .forecast-conditions img {
