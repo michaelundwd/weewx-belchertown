@@ -821,6 +821,7 @@ class getData(SearchList):
                     "mcloudyw": "mostly-cloudy-day",
                     "mcloudywn": "mostly-cloudy-night",
                     "na": "unknown",
+                    "null": "null",
                     "pcloudy": "partly-cloudy-day",
                     "pcloudyn": "partly-cloudy-night",
                     "pcloudyr": "rain",
@@ -887,7 +888,7 @@ class getData(SearchList):
             forecast_lang = self.generator.skin_dict['Extras']['forecast_lang'].lower()
             if forecast_provider == "aeris":
                 if self.generator.skin_dict['Extras']['forecast_aeris_use_metar'] == "1":
-                    forecast_current_url = "https://api.aerisapi.com/observations/%s,%s?&format=json&filter=allstations&filter=metar&limit=1&client_id=%s&client_secret=%s" % ( latitude, longitude, forecast_api_id, forecast_api_secret )
+                    forecast_current_url = "https://api.aerisapi.com/observations/%s,%s?&format=json&filter=metar&limit=1&client_id=%s&client_secret=%s" % ( latitude, longitude, forecast_api_id, forecast_api_secret )
                 else:
                     forecast_current_url = "https://api.aerisapi.com/observations/%s,%s?&format=json&filter=allstations&limit=1&client_id=%s&client_secret=%s" % ( latitude, longitude, forecast_api_id, forecast_api_secret )
                 forecast_24hr_url = "https://api.aerisapi.com/forecasts/%s,%s?&format=json&filter=day&limit=7&client_id=%s&client_secret=%s" % ( latitude, longitude, forecast_api_id, forecast_api_secret )
@@ -993,7 +994,7 @@ class getData(SearchList):
                 if len(data["current"][0]["response"]) > 0 and self.generator.skin_dict['Extras']['forecast_aeris_use_metar'] == "0":
                     # Non-metar responses do not contain these values. Set them to empty.
                     current_obs_summary = ""
-                    current_obs_icon = ""
+                    current_obs_icon = "null.png"
                     visibility = "N/A"
                     visibility_unit = ""
                 elif len(data["current"][0]["response"]) > 0 and self.generator.skin_dict['Extras']['forecast_aeris_use_metar'] == "1":
@@ -1021,11 +1022,11 @@ class getData(SearchList):
                     # "code": "warn_no_data",
                     # "description": "Valid request. No results available based on your query parameters."
                     current_obs_summary = ""
-                    current_obs_icon = ""
+                    current_obs_icon = "null.png"
                     visibility = "N/A"
                     visibility_unit = ""
         else:
-            current_obs_icon = ""
+            current_obs_icon = "null.png"
             current_obs_summary = ""
             visibility = "N/A"
             visibility_unit = ""

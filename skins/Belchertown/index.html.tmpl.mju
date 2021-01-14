@@ -1,4 +1,4 @@
-//  mju version - Nov 2020
+<!--  mju version -->
 #errorCatcher Echo
 ##
 ## Specifying an encoding of UTF-8 is usually safe, but if your text is 

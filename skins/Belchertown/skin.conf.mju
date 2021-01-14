@@ -10,7 +10,7 @@
     # General Site Defaults
     belchertown_debug = 0
     belchertown_locale = "auto"    
-    theme = light																# mju - normally dark, but set to light for test site
+    theme = dark																# mju - normally dark, but set to light for test site
     theme_toggle_enabled = 1
 	site_title = "Lordship Test Site"											# mju - to distinguish test from live site
     logo_image = ""
