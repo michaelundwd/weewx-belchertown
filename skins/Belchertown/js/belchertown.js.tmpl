@@ -1,4 +1,4 @@
-//  mju version - Nov 2020
+//  mju version Jan 2021                          
 #encoding UTF-8
 #import datetime
 
@@ -198,6 +198,190 @@ function get_outTemp_color( unit, outTemp, returnColor=false ) {
     }
 }
 
+// Change the color of the aqi variable according to US-EPA standards
+// (adjusted to match skin colors better)
+function get_aqi_color( aqi, returnColor=false ) {
+    if ( aqi >= 301 ) {
+        var aqi_color = "#cc241d";
+    } else if ( aqi >= 201 ) {
+        var aqi_color = "#b16286";
+    } else if ( aqi >= 151 ) {
+        var aqi_color = "rgba(255,69,69,1)";
+    } else if ( aqi >= 101 ) {
+        var aqi_color = "rgba(255,127,0,1)";
+    } else if ( aqi >= 51 ) {
+        var aqi_color = "rgba(255,174,0,0.9)";
+    } else if ( aqi < 51 ) {
+        var aqi_color = "#71bc3c";
+    }
+
+    // Return the color value if requested, otherwise just set the div color
+    if ( returnColor ) {
+        return aqi_color;
+    } else {
+        jQuery(".aqi_outer").css( "color", aqi_color );
+    }
+}
+
+function get_gauge_color( value, options ) {
+    if (options.color1) {
+        // Failsafe in case value drops below the lowest color position user has set.
+        // Otherwise color is undefined when the value is below color1_position
+        var color = options.color1
+    }
+    if (options.color2) {
+        if (value >= options.color2_position) {
+            var color = options.color2
+        }
+    }
+    if (options.color3) {
+        if (value >= options.color3_position) {
+            var color = options.color3
+        }
+    }
+    if (options.color4) {
+        if (value >= options.color4_position) {
+            var color = options.color4
+        }
+    }
+    if (options.color5) {
+        if (value >= options.color5_position) {
+            var color = options.color5
+        }
+    }
+    if (options.color6) {
+        if (value >= options.color6_position) {
+            var color = options.color6
+        }
+    }
+    if (options.color7) {
+        if (value >= options.color7_position){
+            var color = options.color7
+        }
+    }
+    return color
+}
+
+function get_gauge_label( value, options ) {
+    if (options.color1) {
+        if (options.color1_label) {
+            var label = options.color1_label
+        }
+    }
+    if (options.color2) {
+        if (value >= options.color2_position) {
+            var label = null
+            if (options.color2_label) {
+                var label = options.color2_label
+            }
+        }
+    }
+    if (options.color3) {
+        if (value >= options.color3_position) {
+            var label = null
+            if (options.color3_label) {
+                var label = options.color3_label
+            }
+        }
+    }
+    if (options.color4) {
+        if (value >= options.color4_position) {
+            var label = null
+            if (options.color4_label) {
+                var label = options.color4_label
+            }
+        }
+    }
+    if (options.color5) {
+        if (value >= options.color5_position) {
+            var label = null
+            if (options.color5_label) {
+                var label = options.color5_label
+            }
+        }
+    }
+    if (options.color6) {
+        if (value >= options.color6_position) {
+            var label = null
+            if (options.color6_label) {
+                var label = options.color6_label
+            }
+        }
+    }
+    if (options.color7) {
+        if (value >= options.color7_position){
+            var label = null
+            if (options.color7_label) {
+                var label = options.color7_label
+            }
+        }
+    }
+    return label
+}
+
+function kts_to_beaufort(windspeed) {
+    // Given windspeed in knots, converts to Beaufort scale
+    if (windspeed <= 1) {
+        return 0
+    } else if (windspeed <= 3) {
+        return 1
+    } else if (windspeed <=6) {
+        return 2
+    } else if (windspeed <=10) {
+        return 3
+    } else if (windspeed <=15) {
+        return 4
+    } else if (windspeed <=21) {
+        return 5
+    } else if (windspeed <=27) {
+        return 6
+    } else if (windspeed <=33) {
+        return 7
+    } else if (windspeed <=40) {
+        return 8
+    } else if (windspeed <=47) {
+        return 9
+    } else if (windspeed <=55) {
+        return 10
+    } else if (windspeed <=63) {
+        return 11
+    } else if (windspeed > 63) {
+        return 12
+    }
+}
+
+function beaufort_cat(beaufort) {
+    // Given Beaufort number, returns category description
+    switch (beaufort) {
+        case 0:
+            return "$beaufort0"
+        case 1:
+            return "$beaufort1"
+        case 2:
+            return "$beaufort2"
+        case 3:
+            return "$beaufort3"
+        case 4:
+            return "$beaufort4"
+        case 5:
+            return "$beaufort5"
+        case 6:
+            return "$beaufort6"
+        case 7:
+            return "$beaufort7"
+        case 8:
+            return "$beaufort8"
+        case 9:
+            return "$beaufort9"
+        case 10:
+            return "$beaufort10"
+        case 11:
+            return "$beaufort11"
+        case 12:
+            return "$beaufort12"
+    }
+}
+
 function highcharts_tooltip_factory(obsvalue, point_obsType, highchartsReturn=false, rounding, mirrored=false, numberFormat) {
     // Mirrored values have the negative sign removed
     if ( mirrored ) {
@@ -333,31 +517,23 @@ function autoTheme(sunset_hour, sunset_min, sunrise_hour, sunrise_min) {
     belchertown_debug("Auto theme: are we in daylight hours: " + dayTime);
     belchertown_debug("Auto theme: sessionStorage.getItem('theme') = " + sessionStorage.getItem('theme'));
     
-    if ( dayTime ) {
+    if ( dayTime == true ) {
         // Day time, set light if needed
-        if ( document.body.classList.contains("dark") ) {
-            if ( sessionStorage.getItem('theme') == "auto" ) {
-                belchertown_debug("Auto theme: setting light theme since dayTime variable is true (day)");
-            } else {
-                belchertown_debug("Auto theme: cannot set light theme since visitor used toggle to override theme. Refresh to reset the override.");
-            }
-            // Only change theme if user has not overridden the auto option with the toggle
-            if ( sessionStorage.getItem('theme') == "auto" ) {
-                changeTheme("light");
-            }
+        // Only change theme if user has not overridden the auto option with the toggle
+        if ( sessionStorage.getItem('theme') == "auto" ) {
+            belchertown_debug("Auto theme: setting light theme since dayTime variable is true (day)");
+            changeTheme("light");
+        } else {
+            belchertown_debug("Auto theme: cannot set light theme since visitor used toggle to override theme. Refresh to reset the override.");
         }
     } else {
         // Night time, set dark if needed
-        if ( document.body.classList.contains("light") ) {
-            if ( sessionStorage.getItem('theme') == "auto" ) {
-                belchertown_debug("Auto theme: setting dark theme since dayTime variable is false (night)");
-            } else {
-                belchertown_debug("Auto theme: cannot set dark theme since visitor used toggle to override theme. Refresh to reset the override.");
-            }
-            // Only change theme if user has not overridden the auto option with the toggle
-            if ( sessionStorage.getItem('theme') == "auto" ) {
-                changeTheme("dark");
-            }
+        // Only change theme if user has not overridden the auto option with the toggle
+        if ( sessionStorage.getItem('theme') == "auto" ) {
+            belchertown_debug("Auto theme: setting dark theme since dayTime variable is false (night)");
+            changeTheme("dark");
+        } else {
+            belchertown_debug("Auto theme: cannot set dark theme since visitor used toggle to override theme. Refresh to reset the override.");
         }
     }
 }
@@ -375,6 +551,9 @@ function changeTheme(themeName, toggleOverride=false) {
     }
     if ( themeName == "dark" ) {
         // Apply dark theme
+        #if $radar_html_dark != "None"
+        jQuery('.radar_image').html( '$radar_html_dark' );
+        #end if
         jQuery('body').addClass("dark");
         jQuery('body').removeClass("light");
         #if $Extras.has_key('theme_toggle_enabled') and $Extras.theme_toggle_enabled == '1'
@@ -387,6 +566,9 @@ function changeTheme(themeName, toggleOverride=false) {
         sessionStorage.setItem('currentTheme', 'dark');
     } else if ( themeName == "light" ) {
         // Apply light theme
+        #if $radar_html_dark != "None"
+        jQuery('.radar_image').html( '$radar_html' );
+        #end if
         jQuery('body').addClass("light");
         jQuery('body').removeClass("dark");
         #if $Extras.has_key('theme_toggle_enabled') and $Extras.theme_toggle_enabled == '1'
@@ -625,6 +807,7 @@ function aeris_coded_alerts( data, full_observation = false ) {
         "CF.A": "$obs.label.forecast_alert_code_CF_A",
         "FG.Y": "$obs.label.forecast_alert_code_FG_Y",
         "MF.Y": "$obs.label.forecast_alert_code_MF_Y",
+        "FO.Y": "$obs.label.forecast_alert_code_FO_Y",
         "SM.Y": "$obs.label.forecast_alert_code_SM_Y",
         "MS.Y": "$obs.label.forecast_alert_code_MS_Y",
         "DS.W": "$obs.label.forecast_alert_code_DS_W",
@@ -894,7 +1077,7 @@ function aeris_icon( data ) {
         "showers": "rain",
         "showersn": "rain",
         "showersw": "rain",
-        "showersw": "rain",
+        "showerswn": "rain",
         "sleet": "sleet",
         "sleetn": "sleet",
         "sleetsnow": "sleet",
@@ -1001,8 +1184,7 @@ function update_forecast_data( data ) {
     forecast_provider = "$Extras.forecast_provider";
     belchertown_debug("Forecast: Provider is " + forecast_provider);
     belchertown_debug("Forecast: Updating data");
-	belchertown_debug(data);    
-                      
+    belchertown_debug(data);    
     
     if ( forecast_provider == "N/A" ) {
         jQuery(".forecastrow").hide();
@@ -1032,7 +1214,7 @@ function update_forecast_data( data ) {
         } catch(err) {
             // Visibility not in the station observation table or any of the unit arrays, so silently exit
         }
-        
+
 //  start of new composite version of forecast code
                                                                                                                     
         var forecast_types = ["forecast_1hr","forecast_3hr","forecast_24hr"];
@@ -1077,7 +1259,13 @@ function update_forecast_data( data ) {
                 }
            
                 // Determine wind units
-                if ( "$Extras.forecast_units" == "ca" ) {
+                if ( "$unit.unit_type.windSpeed" == "knot" ) {
+                    windSpeed = data[(forecast_interval)][0]["response"][0]["periods"][i]["windSpeedKTS"];
+                    windGust = data[(forecast_interval)][0]["response"][0]["periods"][i]["windGustKTS"];
+                } else if ( "$unit.unit_type.windSpeed" == "beaufort" ) {
+                    windSpeed = kts_to_beaufort(data[(forecast_interval)][0]["response"][0]["periods"][i]["windSpeedKTS"]);
+                    windGust = kts_to_beaufort(data[(forecast_interval)][0]["response"][0]["periods"][i]["windGustKTS"]);
+                } else if ( "$Extras.forecast_units" == "ca" ) {
                     // ca = kph
                     windSpeed = data[(forecast_interval)][0]["response"][0]["periods"][i]["windSpeedKPH"];
                     windGust = data[(forecast_interval)][0]["response"][0]["periods"][i]["windGustKPH"];
@@ -1102,7 +1290,7 @@ function update_forecast_data( data ) {
                     }
                     // ensure that precip is always defined
                     precip = 0;
-                } else if ( data[(forecast_interval)][0]["response"][0]["periods"][i]["pop"] > 0 ) {
+               } else if ( data[(forecast_interval)][0]["response"][0]["periods"][i]["pop"] > 0 ) {
                     // Rain percent of precip
                     precip = data[(forecast_interval)][0]["response"][0]["periods"][i]["pop"];
                 } else {
@@ -1169,6 +1357,7 @@ function update_forecast_data( data ) {
                     output_html += '<div class="forecast-precip">';
                     if ( forecast_row[i]["snow_depth"] > 0 ) {
                         output_html += '<div class="snow-precip">';
+                        // output_html += '<img src="'+get_relative_url()+'/images/snowflake-icon-15px.png"> <span>';
                         output_html += '<img src="'+get_relative_url()+'/images/snowflake-icon-15px.png"> <span>'+ parseFloat( forecast_row[i]["snow_depth"] ).toFixed(0) +'<span> ' + forecast_row[i]["snow_unit"];
                         output_html += '</div>';
                     } else if ( forecast_row[i]["precip"] > 0 ) {
@@ -1598,6 +1787,16 @@ function update_current_wx(data) {
     if ( data.hasOwnProperty("windSpeed_mps") ) {
         jQuery(".curwindspeed").html( parseFloat(parseFloat(data["windSpeed_mps"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windSpeed"], maximumFractionDigits: unit_rounding_array["windSpeed"]}) );
     }
+    // Windspeed Beaufort
+    if ( data.hasOwnProperty("windSpeed_beaufort") ) {
+        jQuery(".curwindspeed").html( parseFloat(parseFloat(data["windSpeed_beaufort"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windSpeed"], maximumFractionDigits: unit_rounding_array["windSpeed"]}) );
+    }
+    // Windspeed knots
+    if ( data.hasOwnProperty("windSpeed_knot") ) {
+        jQuery(".curwindspeed").html( parseFloat(parseFloat(data["windSpeed_knot"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windSpeed"], maximumFractionDigits: unit_rounding_array["windSpeed"]}) );
+    }
+    
+    jQuery(".beaufort").html( beaufort_cat( parseFloat(data["beaufort_count"])) );
     
     // Wind Gust US
     // May not be provided in mqtt, but just in case.
@@ -1611,6 +1810,14 @@ function update_current_wx(data) {
     // Wind Gust METRICWX
     if ( data.hasOwnProperty("windGust_mps") ) {
         jQuery(".curwindgust").html( parseFloat(parseFloat(data["windGust_mps"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windGust"], maximumFractionDigits: unit_rounding_array["windGust"]}) );
+    }
+    // Wind Gust Beaufort
+    if ( data.hasOwnProperty("windGust_beaufort") ) {
+        jQuery(".curwindspeed").html( parseFloat(parseFloat(data["windGust_beaufort"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windSpeed"], maximumFractionDigits: unit_rounding_array["windSpeed"]}) );
+    }
+    // Windspeed knots
+    if ( data.hasOwnProperty("windGust_knot") ) {
+        jQuery(".curwindspeed").html( parseFloat(parseFloat(data["windGust_knot"])).toLocaleString("$system_locale_js", {minimumFractionDigits: unit_rounding_array["windSpeed"], maximumFractionDigits: unit_rounding_array["windSpeed"]}) );
     }
     
     // Windchill US
@@ -1631,6 +1838,10 @@ Highcharts.setOptions({
         timezoneOffset: $highcharts_timezoneoffset
     },
     lang: {
+        months: moment.months(),
+        shortMonths: moment.monthsShort(),
+        weekdays: moment.weekdays(),
+        shortWeekdays: moment.weekdaysShort(),
         decimalPoint: "$highcharts_decimal",
         thousandsSep: "$highcharts_thousands"
     }
@@ -2048,10 +2259,6 @@ function showChart(json_file, prepend_renderTo=false) {
                 
                 // Barometer chart plots get a higher precision yAxis tick
                 if (s.obsType == "barometer") {
-                    if ( typeof s.yAxis_tickInterval === "undefined" ) { 
-                        // If no tick interval override, set 0.01 as default tick interval to satisfy an old request for this level of precision. 
-                        options.yAxis[this_yAxis].tickInterval = 0.01;
-                    }
                     // Define yAxis label float format if rounding is defined. Default to 2 decimals if nothing defined
                     if ( typeof s.rounding !== "undefined" ) {
                         options.yAxis[this_yAxis].labels = { format: '{value:.'+s.rounding+'f}' }
@@ -2152,7 +2359,138 @@ function showChart(json_file, prepend_renderTo=false) {
                     options.series.push(ns);
                 });
             }
-            
+
+            // Configure gauge chart formatting
+            if (options.chart.type == "gauge") {
+                // Highcharts does not allow the guage background to have rounded ends. To get around
+                // this, define a "dummy" series that fills the gauge with the appropriate color.
+                // This way, the ends are rounded if the user specifies.
+                //
+                // Gauge chart works best with only one data point, so the most recent (last) data point
+                // is used
+                options.series[0].data = [{
+                    y: 9999999,
+                    color: '#e6e6e6',
+                    className: 'highcharts-pane',
+                    zIndex: 0,
+                    dataLabels: {enabled: false}
+                }, {
+                    y: options.series[0].data.pop()[1], 
+                    color: options.series[0].color,
+                }]
+                options.chart.type = "solidgauge"
+                options.pane = { 
+                    startAngle: -140,
+                    endAngle: 140,
+                    background: [{
+                        outerRadius: 0,
+                        innerRadius: 0,
+                    }] 
+                }
+                // If user has set colors_enabled, change the color according to the value
+                if (options.series[0].colors_enabled) {
+                    options.series[0].data[1].color = get_gauge_color(options.series[0].data[1]["y"], options.series[0])
+                }
+                options.plotOptions = {
+                    solidgauge: {
+                        dataLabels: {
+                            useHTML: true,
+                            enabled: true, 
+                            borderWidth: 0,
+                            style: {
+                                fontWeight: 'bold',
+                                lineHeight: '0.5em',
+                                textAlign: 'center',
+                                fontSize: '50px',
+                                // Match color if set by user
+                                color: options.series[0].data[1].color,
+                                textOutline: 'none'
+                            }
+                        },
+                    }
+                }
+                if ( get_gauge_label( options.series[0].data[1]["y"], options.series[0] ) ) {
+                    options.plotOptions.solidgauge.dataLabels.format = "<span style='text-align:center'>{y:.#f}</span><br><span style='font-size:14px;text-align:center'>" + get_gauge_label( options.series[0].data[1]["y"], options.series[0] ) + '</span>'
+                    options.plotOptions.solidgauge.dataLabels.y = -25
+                } else if ( unit_label_array[observation_type] == null ) {
+                    options.plotOptions.solidgauge.dataLabels.format = "<span style='text-align:center'>{y:.#f}</span>"
+                } else {
+                    options.plotOptions.solidgauge.dataLabels.format = "<span style='text-align:center'>{y:.#f}</span><br><span style='font-size:20px;text-align:center'>" + unit_label_array[observation_type] + '</span>'
+                    options.plotOptions.solidgauge.dataLabels.y = -25
+                }
+                options.yAxis = {
+                    min: 0,
+                    max: 100,
+                    lineColor: null,
+                    tickPositions: []
+                }
+                // Override default max and min if user has specified
+                if (options.series[0].yAxis_max) {
+                    options.yAxis.max = options.series[0].yAxis_max;
+                }
+                if (options.series[0].yAxis_min) {
+                    options.yAxis.min = options.series[0].yAxis_min;
+                }
+                options.tooltip.enabled = false
+                options.xAxis.crosshair = false
+            }
+
+            // If AQI chart is present, configure a special chart
+            if (observation_type == "aqiChart") {
+                // Highcharts does not allow the guage background to have rounded ends. To get around
+                // this, define a "dummy" series that fills the gauge with the appropriate color.
+                // This way, the ends are rounded if the user specifies.
+                options.series[0].data = [{
+                    y: 500,
+                    color: '#e6e6e6',
+                    className: 'highcharts-pane',
+                    zIndex: 0,
+                    dataLabels: {enabled: false}
+                }, {
+                    y: options.series[0].data[0]['y'],
+                    color: get_aqi_color(options.series[0].data[0]['y'], true),
+                    category: options.series[0].data[0]['category']
+                }]
+                options.chart.type = "solidgauge"
+                options.pane = {
+                    startAngle: -140,
+                    endAngle: 140,
+                    background: [{
+                        outerRadius: 0,
+                        innerRadius: 0,
+                    }] 
+                }
+                options.plotOptions = {
+                    solidgauge: {
+                        dataLabels: {
+                            useHTML: true,
+                            enabled: true, 
+                            y: -30,
+                            borderWidth: 0,
+                            format: '<span style="text-align:center">{y}</span><br><span style="font-size:14px;text-align:center">' + options.series[0].data[1]['category'] + '</span>',
+                            style: {
+                                fontWeight: 'bold',
+                                lineHeight: '0.5em',
+                                textAlign: 'center',
+                                fontSize: '50px',
+                                color: options.series[0].data[1].color,
+                                textOutline: 'none'
+                            }
+                        },
+                        linecap: 'round',
+                        rounded: true
+                    }
+                }
+                options.yAxis = {
+                    min: 0,
+                    max: 500,
+                    lineColor: null,
+                    tickPositions: []
+                }
+                options.tooltip.enabled = false
+                options.xAxis.crosshair = false
+            }
+
             // If Hays chart is present, configure a special chart to show that data
             if (observation_type == "haysChart") {
                 options.chart.type = "arearange"
@@ -2165,20 +2503,16 @@ function showChart(json_file, prepend_renderTo=false) {
                         }
                     }
                 };
-
                 // Find min and max of the series data for the yAxis min and max
                 var maximum_flattened = [];
                 options.series[0].data.forEach( seriesData => {
                     maximum_flattened.push(seriesData[2]);
                 });
                 var range_max = Math.max(...maximum_flattened);
-                
                 if (options.series[0].yAxis_softMax) {
                     var range_max = options.series[0].yAxis_softMax;
                 }
-                
                 options.legend = { "enabled": false }
-
                 options.yAxis = {
                     showFirstLabel: false,
                     tickInterval: 2,
@@ -2194,7 +2528,6 @@ function showChart(json_file, prepend_renderTo=false) {
                         y: 0
                     },
                 }
-
                 options.tooltip = {
                     split: false,
                     shared: true,
@@ -2209,7 +2542,6 @@ function showChart(json_file, prepend_renderTo=false) {
                         });
                     }
                 }
-
                 var currentSeries = options.series;
                 var currentSeriesData = options.series[0].data;
                 var range_unit = options.series[0].range_unit;
@@ -2269,12 +2601,12 @@ function showChart(json_file, prepend_renderTo=false) {
                     },
                 }
                 
-                options.xAxis = {}
                 options.xAxis = {
-                    labels: {
-                        format: "{value: %b}"
+                    dateTimeLabelFormats: {
+                        day: '%e %b',
+                        week: '%e %b',
+                        month: '%b %y',
                     },
-                    tickInterval: 2592000000, // 30 days
                     showLastLabel: true,
                     crosshair: true,
                     type: "datetime"

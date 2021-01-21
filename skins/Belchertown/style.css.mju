@@ -1,4 +1,4 @@
-/*  mju version - Nov 2020 */
+/*  mju version - Jan 2021 */
 /*
  CSS file for Belchertown weather website.
  This website was originally created in WordPress on Genesis WP. 
@@ -1464,6 +1464,16 @@ p.entry-meta {
 	font-size:20px;
 }
 
+.aqi_outer {
+    text-align:center;
+    font-size:20px;
+}
+
+.aqi_location_outer {
+    text-align:center;
+    font-size:14px;
+}
+
 #wxicon {
     display: block;
     margin: 0 auto;
@@ -1641,8 +1651,12 @@ p.entry-meta {
 }
 
 .mph { 
-	padding-top:10px !important;
-	font-size:18px !important;
+	padding-top: 5px !important;
+	font-size: 15px !important;
+}
+
+.beaufort {
+    padding-top: 10px !important;
 }
 
 .wx-pressure-trend { 

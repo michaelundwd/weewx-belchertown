@@ -1,4 +1,4 @@
-<!--  mju version -->
+<!--  mju version - Jan 2021 -->
 #errorCatcher Echo
 ##
 ## Specifying an encoding of UTF-8 is usually safe, but if your text is 
@@ -37,6 +37,11 @@
         #end if
         
         jQuery(document).ready(function() {
+            get_aqi_color( "$aqi" );
+            // weewx >= 4.2 can convert to Beaufort directly, but to improve backwards compatibility, convert windSpeed to
+            // knots and then use Javascript function to convert to Beaufort
+            jQuery(".beaufort").html( beaufort_cat( kts_to_beaufort( $current.windSpeed.knot.toString(addLabel=False) ) ) );
+
             get_outTemp_color( "$unit.unit_type.outTemp", "$current.outTemp.formatted" );
             
             rotateThis( "$current.windDir.formatted" );
@@ -206,6 +211,14 @@
                                         <div class="current-obs-text">
                                             $current_obs_summary
                                         </div>
+                                        #if $Extras.has_key("aqi_enabled") and $Extras.aqi_enabled == '1'
+                                        <div class="aqi_outer">
+                                            AQI:  $aqi ($aqi_category)
+                                            #if $Extras.has_key("aqi_location_enabled") and $Extras.aqi_location_enabled == '1'
+                                            <span class="aqi_location_outer"><br>$aqi_location</span>
+                                            #end if
+                                        </div>
+                                        #end if
                                     </div>
                                     <div class="col-sm-6">
                                         #if $current.appTemp.has_data
@@ -278,6 +291,11 @@
                                                 <tr>
                                                     <td class="mph" colspan="3">$unit.label.windSpeed</td>
                                                 </tr>
+                                                #if $Extras.has_key("beaufort_category") and $Extras.beaufort_category == '1'
+                                                <tr>
+                                                    <td class="beaufort" colspan="4"></td>
+                                                </tr>
+                                                #end if
                                             </tbody>
                                         </table>
                                     </div>
@@ -319,7 +337,7 @@
                                                             #if $almanac.moon_index == 0
                                                                 <div class='wi wi-moon-new'></div>
                                                             #else if $almanac.moon_index == 1
-                                                                <div class='wi wi-moon-waxing-crescent-3 $hemisphere'></div>
+                                                                <div class='wi wi-moon-waxing-crescent-1 $hemisphere'></div>
                                                             #else if $almanac.moon_index == 2
                                                                 <div class='wi wi-moon-first-quarter $hemisphere'></div>
                                                             #else if $almanac.moon_index == 3
@@ -329,7 +347,7 @@
                                                             #else if $almanac.moon_index == 5
                                                                 <div class='wi wi-moon-waning-gibbous-3 $hemisphere'></div>
                                                             #else if $almanac.moon_index == 6
-                                                                <div class='wi wi-moon-third-quarter $hemisphere'></div>
+                                                                <div class='wi wi-moon-first-quarter $hemisphere'></div>
                                                             #else if $almanac.moon_index == 7
                                                                 <div class='wi wi-moon-waning-crescent-4 $hemisphere'></div>
                                                             #end if
@@ -373,7 +391,7 @@
                     
                     <!-- Radar image -->
                     <div class="col-lg-5 radar-map toprow-height">
-                        $radar_html
+                        <div class="radar_image">$radar_html</div>
                     </div>
                 </div>
                 <!-- End of first row -->
@@ -417,7 +435,7 @@
                         <div class="col-lg-12 row 3hr_forecasts row-no-padding"></div><!-- JS -->
                     </div>        
                 
-                    #if $Extras.has_key("forecast_interval_hours") and $Extras.forecast_interval_hours == '24'
+                    #if ($Extras.has_key("forecast_interval_hours") and $Extras.forecast_interval_hours == '24') or not ($Extras.has_key("forecast_interval_hours"))
                     <script>forecast_default(24);</script>
                     #end if
                     <div id="24hour-selected-forecast" style="display: none;">
