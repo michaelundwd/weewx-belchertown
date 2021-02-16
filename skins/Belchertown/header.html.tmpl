@@ -1,4 +1,3 @@
-<!-- mju version -->
 #encoding UTF-8
 ## Determine initial skin theme CSS class from config
 ## Auto theme setting determines which CSS class to use based on the hour
@@ -174,29 +173,7 @@
                                 #end if
                             </a>
                         </p>
-                        
-                        <!-- mju updated & alert info below for Nexus10 taken from index.html.tmpl; only shows on the home page -->
-                        <!-- Updated time ago -->
-                        <div class="updated-wrapper-nexus10" style="display:none">
-                            <div class="updated-wrapper">
-                                <div class="onlineMarkerOuter">
-                                    <span class="loadingMarker" style="display:none"></span>
-                                    <span class="onlineMarker" style="display:none"></span>
-                                    <span class="offlineMarker" style="display:none"></span>
-                                </div>
-                                <div class="updated"></div><!-- AJAX moment.js -->
-                            </div>
-                            #if $social_html != ""
-                            $social_html
-                            #end if
-                            <div class="clear"></div>
-                            <div class="last-updated-alert" style="display:none;"></div><!-- AJAX moment.js -->
-                            #if $Extras.has_key("forecast_alert_enabled") and $Extras.forecast_alert_enabled == '1'
-                            <div class="wx-stn-alert"><span class="wx-stn-alert-text"></span></div><!-- AJAX -->
-                            #end if
-                        </div>
                     </div>
-                        
                     <div class="widget-area header-widget-area">
                         <section id="nav_menu">
                             <div class="widget-wrap">

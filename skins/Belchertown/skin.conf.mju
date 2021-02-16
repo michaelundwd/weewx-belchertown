@@ -27,7 +27,7 @@
     radar_html = '<iframe src="https://maps.meteoradar.co.uk/GratisRadar/856/891/verwacht?zoom=6" scrolling=no width=650 height=360 frameborder=no></iframe>'			  
 
     # Station Observations. Special observation rainWithRainRate combines Daily Rain with Rain Rate in 1 line
-    station_observations = "barometer", "dewpoint", "outHumidity", "rainWithRainRate", "radiation", "UV", "inTemp"
+    station_observations = "barometer", "dewpoint", "outHumidity", "rainWithRainRate", "cloud_cover", "radiation", "UV", "inTemp"
 
     # Manifest Settings for Mobile Phones
     manifest_name = "Lordship Weather"											# mju - was "My Weather Website"
