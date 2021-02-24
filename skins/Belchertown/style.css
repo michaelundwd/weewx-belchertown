@@ -3,7 +3,7 @@
  This website was originally created in WordPress on Genesis WP. 
  A lot of this CSS here is from the Genesis WP Child Theme.
  License URI: http://www.gnu.org/licenses/gpl-2.0.html 
- mju version Feb 2021 
+ mju version for Nexus 10 - Feb 2021 
 */
 
 /* ## Baseline Normalize
@@ -1652,11 +1652,12 @@ p.entry-meta {
 
 .mph { 
 	padding-top: 5px !important;
-	font-size: 15px !important;
+	font-size: 18px !important;
 }
 
 .beaufort {
     padding-top: 10px !important;
+	font-size:18px;
 }
 
 .wx-pressure-trend { 
@@ -2068,6 +2069,13 @@ input:checked + .slider:before {
 }
 
 /* End Dark Mode Switch */
+
+/*  Nexus 10 1280*800 landscape */
+@media only screen and (width: 1280px) and (height: 800px) and (orientation: landscape) {
+    .site-header {
+        display: none !important;
+    }
+}
 
 @media only screen and (max-width: 800px) {
 	
