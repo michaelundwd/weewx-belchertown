@@ -1203,8 +1203,13 @@ function update_forecast_data(data) {
         jQuery(".current-obs-text").html(aeris_coded_weather(data["current"][0]["response"]["ob"]["weatherPrimaryCoded"], true));
         
         // AQI
-        jQuery(".wx-aqi").html(data["aqi"][0]["response"][0]["periods"][0]["aqi"]);
-        jQuery(".wx-aqi-category").html(data["aqi"][0]["response"][0]["periods"][0]["category"]);
+        if (data['aqi'][0]['response'][0]) {
+            jQuery(".wx-aqi").html(data["aqi"][0]["response"][0]["periods"][0]["aqi"]);
+            jQuery(".wx-aqi-category").html(data["aqi"][0]["response"][0]["periods"][0]["category"]);       
+        } else {
+            jQuery(".wx-aqi").html('');
+            jQuery(".wx-aqi-category").html('unknown');
+        }
 
         // Visibility text in station observation table
         if (("$Extras.forecast_units" == "si") || ("$Extras.forecast_units" == "ca")) {

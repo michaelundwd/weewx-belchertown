@@ -226,7 +226,7 @@ type = line
     aggregate_interval = 86400
     button_text = Yesterday
     gapsize = 300 # This should be your archive_interval from weewx.conf. Standard is 5 minutes
-    generate = daily    # daily is fine as long as wee_graph has been used
+    generate = hourly
 	show_button = true
     time_ago = 1
     time_length = days_ago
@@ -450,7 +450,7 @@ type = line
             yAxis_max = 14
             yAxis_min = 0
 
-[annual]
+[AnnualSummaries]
     aggregate_interval = 86400 # 1 day
     aggregate_type = max
     button_text = "Annual"
@@ -662,7 +662,7 @@ type = line
 #   End of annual section to copy
 
 
-[summary]
+[OverallSummary]
 	# Overall Summary across all years
 	
     aggregate_interval = 86400  #86400 # 1 day
@@ -680,10 +680,10 @@ type = line
         title = "Rainfall & Average (max/min) Temperature"
         subtitle = "for all months in all years"
         [[[outTemp_max_All]]]
-            aggregate_type = max
+            aggregate_type = avg
             color = "#fc0404"
             name = Max Temperature
-            observation_type = outTemp
+            observation_type = maxTemp
 			yAxis_label = Temperature (°C)
             yAxis_max = 30
             yAxis_min = -10
@@ -692,10 +692,10 @@ type = line
                 enabled = true
                 radius = 4
         [[[outTemp_min_All]]]
-            aggregate_type = min
+            aggregate_type = avg
             color = "#90ed7d"	# was "#173c6a"
             name = Min Temperature
-            observation_type = outTemp
+            observation_type = minTemp
             yAxis_max = 30
             yAxis_min = -10
             zIndex = 2

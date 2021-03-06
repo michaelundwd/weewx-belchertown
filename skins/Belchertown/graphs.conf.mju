@@ -91,12 +91,25 @@
 # Colors can be specified using the hex notation in quotes, like color = "#000000" for black. 
 # Colors can also be specified in English name, such as color = "green"
 
+# Series Color
+#   1	Blue
+#   2	Green
+#   3	Orange
+#   4	Purple
+#   5	Pink
+#   6	Yellow
+#   7	Dark Blue
+#   8	Red
+#   9	Dark Purple
+#   10	Dark Green
+
+
 # Name
 # If you specify a name for the observation, then we will use that.
 # If you do not specify a name, one will be automatically used.
 
 # zIndex
-# This means this observation will always be on top of others. If this is not set, then the last option will be on top.
+# The observation with the highest zIndex is on top. If this is not set, then the last option will be on top.
 
 # yAxis
 # By placing yAxis under the observation type, this means you want to associate that data to a different yAxis. There are two you can use. 
@@ -111,413 +124,372 @@
 # rxCheckPercent is another one where yAxis min would be 0, and max would be 100. 
 
 # Global Chart Defaults
-# These are fallback options that charts will use if an option is not defined. 
+# These are fallback options that charts will use if an option is not defined.
+ 
 aggregate_type = None
-time_length = 90000 # Last 25 hours
-type = line
 colors = "#268bd2, #90ed7d, #f7a35c, #d33682, #8085e9, #e4d354, #f15c80, #8085e8, #8d4653, #91e8e1"
-# 		     blue,   green,	 orange,  cerise, lt navy, yellow,     pink, md blue,    rust,    cyan	#does not correspond with POB's names
+# 		     blue,   green,	 orange,  cerise, lt navy, yellow,     pink, md blue,    rust,    cyan
+time_length = 90000 # Last 25 hours
+tooltip_date_format = "LLL"
+type = line
 
 [homepage]
-    title = Today since Midnight
-    time_length = today
-    gapsize = 300
+    aggregate_interval = 86400
+    button_text = "Today"
 	exporting = 1
+    gapsize = 300
+	show_button = true
+    time_length = today
+    title = Today since Midnight
 
-	[[temperature]]
+	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
         [[[windchill]]]
             color = "#f7a35c"
         [[[outTemp]]]
-            zIndex = 1
             name = Temperature
+            yAxis = 0
 
-	[[rain]]	#re-ordered April 2020
+	[[rain]]	#re-ordered Feb 2021
         title = Rain
-        [[[rainRate]]]
-			zIndex = 1
         [[[rainTotal]]]
-            name = Rain Total
-			yAxis = 1
 			type = area
+			yAxis = 1
+			zIndex = 1
+        [[[rainRate]]]
 
 	[[wind]]
         title = Wind Rose
         [[[windRose]]]	
 
-	#[[chart4]]
-        # The combined Wind Chart works best in this configuration
-        #title = Wind Speed and Direction
-        #yaxis_min = 0
-        #[[[windDir]]]
-            #zIndex = 1
-            #yAxis = 1
-            #yaxis_max = 360
-            #lineWidth = 0
-            #[[[[marker]]]]
-                #enabled = true
-            #[[[[states]]]]
-                #[[[[[hover]]]]]
-                        #lineWidthPlus = 0
-        #[[[windGust]]]
-        #[[[windSpeed]]]
-            #type = area
-			#zIndex = 2
-
-	[[solar]]
-        title = Solar Radiation and  UV Index
+	[[solar]]   #maxSolarRad added Feb 2021
+        title = Solar Radiation and UV Index
         [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
-           color = "#ffc83f"
+        name = Solar Radiation
+        color = "#ffc83f"
+        zIndex = 1
+        [[[maxSolarRad]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            type = area
+            yAxis_label = "W/m2"
         [[[UV]]]
-            yAxis = 1
-            yaxis_min = 0
-            yaxis_max = 12
             color = "#90ed7d"
-            yAxis_label = "UV Index"
             name = UV Index
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yAxis_max = 14
+            yAxis_min = 0
             zIndex = 2
 			
     [[greenhouse_7]]
-		title = Greenhouse last 7 days
-		subtitle = Temperature & Humidity
-		aggregate_type = avg
 		aggregate_interval = 3600 # 1 hour
-		time_length = 604800 # Last 7 days
+		aggregate_type = avg
 		gapsize = 3600 # 1 hour in seconds
+		subtitle = Temperature & Humidity
+		time_length = 604800 # Last 7 days
+		title = Greenhouse last 7 days
         [[[inTemp]]]
-            zIndex = 1
             name = Temperature
 			#yAxis = 0
 			yAxis_label = Temperature (°C)
 			yAxis_min = 0
 			yAxis_max = 40
+            zIndex = 1
         [[[inhumidity]]]
-			yAxis = 1
-			yAxis_min = 0
-			yAxis_max = 100
-			yAxis_label = Humidity (%)
-			zindex  = 2
-			name = Internal %
             color = "#f7a35c"
-        #[[[outhumidity]]]
-			#yAxis = 1
-			#yAxis_min = 0
-			#yAxis_max = 100
-			#zindex = 3
-			#name = External %
-            #color = "#f7a35c"
+			name = Humidity %
+			yAxis = 1
+			yAxis_label = Humidity (%)
+			yAxis_max = 100
+			yAxis_min = 0
+			zindex  = 2
 
 	[[barometer]]
+		aggregate_interval = 3600 # 1 hour
+		aggregate_type = avg
+		gapsize = 3600 # 1 hour in seconds
+		time_length = 604800 # Last 7 days
         title = Barometer last 7 days
         type = spline
-		aggregate_type = avg
-		aggregate_interval = 3600 # 1 hour
-		time_length = 604800 # Last 7 days
-		gapsize = 3600 # 1 hour in seconds
         [[[barometer]]]
             color = "#BECC00"
 			yAxis_softMin = 990
 			yAxis_softMax = 1030
 			yAxis_tickInterval = 20
 
+
 [day]
     # Chart Timespan Defaults
 
-    # mju inserts to modify from issued graph.conf
-
-    title = Last 24 hours
-	show_button = true
-    button_text = 24 hours
-	generate = hourly
-
-    time_length = 90000	#mju 90000=25 hours - was today
+    aggregate_interval = 86400
+    button_text = Yesterday
     gapsize = 300 # This should be your archive_interval from weewx.conf. Standard is 5 minutes
+    generate = hourly
+	show_button = true
+    time_ago = 1
+    time_length = days_ago
+    title = Yesterday
 
-	[[temperature]]
+	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
         [[[windchill]]]
             color = "#f7a35c"
         [[[outTemp]]]
-            zIndex = 1
             name = Temperature
+            yAxis = 0
 
-    [[rain]]
+	[[rain]]	#re-ordered Feb 2021
         title = Rain
-        [[[rainRate]]]
-			zIndex = 1
         [[[rainTotal]]]
             name = Rain Total
-			zIndex = 0
 			yAxis = 1
 			type = area
-			
+        [[[rainRate]]]
+			zIndex = 1
+
  	[[wind]]
         title = Wind Rose
         [[[windRose]]]	
    
-    [[solar]]
-        title = Solar Radiation and  UV Index
-	[[[radiation]]]
-	   name = Solar Radiation
-	   zIndex = 1
-	   color = "#ffc83f"
-	[[[UV]]]
-	    yAxis = 1
-	    yaxis_min = 0
-	    yaxis_max = 12
-	    color = "#90ed7d"
-	    yAxis_label = "UV Index"
-	    name = UV Index
-	    zIndex = 2
+	[[solar]]
+        title = Solar Radiation and UV Index
+        [[[radiation]]]
+            color = "#ffc83f"
+            name = Solar Radiation
+            zIndex = 1
+        [[[maxSolarRad]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            type = area
+            yAxis_label = "W/m2"
+        [[[UV]]]
+            color = "#90ed7d"
+            name = UV Index
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yAxis_max = 14
+            yAxis_min = 0
+            zIndex = 2			
 
 [week]
     # Chart Timespan Defaults
 
-    title = Last 7 days
-	show_button = true
-    button_text = 7 days
-	generate = hourly
-
-    aggregate_type = max
     aggregate_interval = 3600
-    time_length = 604800 # Last 7 days
+    aggregate_type = max
+    button_text = 7 days
     gapsize = 3600 # 1 hour in seconds
+    generate = hourly
+	show_button = true
+    time_length = 604800 # Last 7 days
+    title = Last 7 days
 
-    [[temperature]]
+	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
         [[[windchill]]]
             color = "#f7a35c"
         [[[outTemp]]]
-            zIndex = 1
             name = Temperature
-    
-    [[rain]]
+            yAxis = 0
+
+	[[rain]]	#re-ordered Feb 2021
         title = Rain
-        [[[rainRate]]]
-			zIndex  = 1
         [[[rainTotal]]]
             name = Rain Total
 			type = area
 			yAxis = 1
-			zIndex = 0
-    
+        [[[rainRate]]]
+			zIndex = 1
+
     [[wind]]
         title = Wind Rose
         [[[windRose]]]	
 
 	[[solar]]
         title = Solar Radiation and UV Index
-		#subtitle = Daily Maximum
-		type = area
         [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
-           color = "#ffc83f"
+            color = "#ffc83f"
+            name = Solar Radiation
+            zIndex = 1
+        [[[maxSolarRad]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            type = area
+            yAxis_label = "W/m2"
         [[[UV]]]
-            yAxis = 1
-            yaxis_min = 0
-            yaxis_max = 12
             color = "#90ed7d"
-            yAxis_label = "UV Index"
             name = UV Index
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yAxis_max = 14
+            yAxis_min = 0
             zIndex = 2
- 
+			 
 [month]
     # Chart Timespan Defaults
     
-    title = Last 30 days
-	show_button = true
-    button_text = 30 days
-	generate = daily
-
-    type = spline
-    aggregate_type = max
     aggregate_interval = 86400 # 1 day
-    time_length = 2592000 # Last 30 days
+    aggregate_type = max
+    button_text = 30 days
     gapsize = 86400 # 1 day in seconds
+    generate = daily
+	show_button = true
+    time_length = 2592000 # Last 30 days
+    title = Last 30 days
+    type = spline
 
-    [[temperature]]
+	[[temperature]] #re-ordered Feb 2021
         title = Temperature
+        [[[dewpoint]]]
+        [[[windchill]]]
+            color = "#f7a35c"
         [[[outTemp]]]
-            zIndex = 1
-            name = Max Temperature
-            color = red
-        [[[outTemp_min]]]
-            name = Min Temperature
-			yAxis_label = Temperature (°C)
-            observation_type = outTemp
-            aggregate_type = min
-            color = blue #was "#7cb5ec"
-    
+            name = Temperature
+            yAxis = 0
+
     [[rain]]
         title = Rain
-        [[[rainRate]]]
-			zIndex = 1
         [[[rainTotal]]]
             name = Rain Total
-			zIndex = 0
-			yAxis = 1
 			type = area
-    
+			yAxis = 1
+        [[[rainRate]]]
+			zIndex = 1
+			    
     [[wind]]
         title = Wind Rose
         [[[windRose]]]	
           
 	[[solar]]
-        title = Solar Radiation and  UV Index
-		subtitle = Daily Maximum
-		type = area
+        title = Solar Radiation and UV Index                        
+        subtitle = Daily Maximum
         [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
-           color = "#ffc83f"
+            aggregate_type = max
+            color = "#ffc83f"
+            name = Solar Radiation
+            zIndex = 1
+        [[[maxSolarRad]]]
+            aggregate_type = max
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            type = area
+            yAxis_label = "W/m2"
         [[[UV]]]
-            yAxis = 1
-            yaxis_min = 0
-            yaxis_max = 12
+            aggregate_type = max
             color = "#90ed7d"
-            yAxis_label = "UV Index"
             name = UV Index
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yAxis_max = 14
+            yAxis_min = 0
             zIndex = 2
 
 [year]
     # Chart Timespan Defaults
 
-    title = Last 365 days
-	show_button = true
-    button_text = 365 days
-	generate = daily
-
-    type = spline
-    aggregate_type = max
     aggregate_interval = 86400 # 1 day
-    time_length = 31536000 	#mju 31536000 = 365 days - was year
+    aggregate_type = max
+    button_text = 365 days
     gapsize = 86400 # 1 day in iseconds
+    generate = daily
+	show_button = true
+    title = Last 365 days
+    time_length = 31536000 	#mju 31536000 = 365 days - was year
+    type = spline
 
     [[temperature]]
         title = Temperature
         [[[outTemp]]]
-            zIndex = 1
-            name = Max Temperature
             color = red
+            name = Max Temperature
+            zIndex = 1
         [[[outTemp_min]]]
-            name = Min Temperature
-			yAxis_label = Temperature (°C)
-            observation_type = outTemp
             aggregate_type = min
             color = blue
+            name = Min Temperature
+            observation_type = outTemp
+			yAxis_label = Temperature (°C)
     
     [[rain]]
         title = Rain
-        [[[rainRate]]]
-			zIndex = 1
         [[[rainTotal]]]
             name = Rain Total
-			zIndex = 0
 			yAxis = 1
 			type = area
-    
+        [[[rainRate]]]
+			zIndex = 1
+			    
     [[wind]]
 	
         title = Wind Rose
         [[[windRose]]]	
 	
-        # The combined Wind Chart works best in this configuration
-        #title = Wind Speed and Direction
-        #yaxis_min = 0
-        #[[[windDir]]]
-            #zIndex = 1
-            #yAxis = 1
-            #yaxis_max = 360
-            #lineWidth = 0
-            # Here we can override the timespan default aggregate type with our own specific to this chart
-            #aggregate_type = avg
-            #[[[[marker]]]]
-                #enabled = true
-            #[[[[states]]]]
-                #[[[[[hover]]]]]
-                        #lineWidthPlus = 0
-        #[[[windGust]]]
-        #[[[windSpeed]]]
-            #zIndex = 2
-    
-    #[[pressure]]
-        #title = Barometer
-        #[[[barometer]]]
-            #color = "#BECC00"
-			#yAxis_softMin = 990
-			#yAxis_softMax = 1030
-			#yAxis_tickInterval = 20
-        
 	[[solar]]
-        title = Solar Radiation and  UV Index
-		subtitle = Daily Maximum
-		type = area
-		aggregate_type = max
+        subtitle = Daily Maximum
+        title = Solar Radiation and UV Index                        
         [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
-           color = "#ffc83f"
+            aggregate_type = max
+            color = "#ffc83f"
+            name = Solar Radiation
+            zIndex = 1
+        [[[maxSolarRad]]]
+            aggregate_type = max
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            type = area
+            yAxis_label = "W/m2"
         [[[UV]]]
-            yAxis = 1
-            yaxis_min = 0
-            yaxis_max = 12
+            aggregate_type = max
             color = "#90ed7d"
-            yAxis_label = "UV Index"
             name = UV Index
-            zIndex = 2
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yAxis_max = 14
+            yAxis_min = 0
 
 [AnnualSummaries]
-	# annual summaries, need to be added to each year, in descending year order
-	# 2021 ongoing
-	# 2020 complete
-	# 2019 has all of June missing
-	# 2018 has only 2 months, so not worth doing
-	
-	# Consider using time_length = years_ago for the previous year's records only
-	# in case I forget to update the annual records at the begining of the year
-	# the issue then is how to get the date of the year into the graph titles/subtitles
-	
-    title = "Annual Summaries"
-    show_button = true
-    button_text = Annual
-	generate = daily
-	
-    type = spline
-	time_length = year_specific
     aggregate_interval = 86400 # 1 day
+    aggregate_type = max
+    button_text = "Annual"
     gapsize = 86400
-    xAxis_groupby = month
+    generate = monthly
+    show_button = true
+    time_length = year_specific
+    title = "Annual Summaries"
+    type = spline
     xAxis_categories = 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    xAxis_groupby = month
 
-	# Start with 2021
-	
-	#begining of section to be copied
-	
-    [[RainTemperature2021]]
-        title = "2021 Rainfall & Temperature"
-        subtitle = "for all months in 2021"
-		year_specific = 2021
+    # This year's data to date - self-adjusting so do not copy
+
+    [[RainTemperature]]
+        aggregate_type = max
+        aggregate_interval = 86400 # 1 day
+        gapsize = 86400
+        subtitle = "Rainfall & Temperature"
+        time_length = year
+        title = "This Year"
+        type = spline
         [[[outTemp]]]
-            zIndex = 2
+            color = red
             name = Max Temperature
-			aggregate_type = max
-			yAxis_label = Temperature (°C)
-            color = "#fc0404"
+            yAxis_max = 45
+            yAxis_min = -15
+            zIndex = 2
             [[[[marker]]]]
                 enabled = true
                 radius = 4
         [[[outTemp_min]]]
+            aggregate_type = min
+            color = "#90ed7d"	# was "#173c6a"
             name = Min Temperature
             observation_type = outTemp
-            aggregate_type = min
+            yAxis_max = 45
+            yAxis_min = -15
             zIndex = 2
-            color = "#90ed7d"	# was "#173c6a"
             [[[[marker]]]]
                 enabled = true
                 radius = 4
@@ -526,19 +498,24 @@ colors = "#268bd2, #90ed7d, #f7a35c, #d33682, #8085e9, #e4d354, #f15c80, #8085e8
             type = column
             yAxis = 1
             zIndex = 0
-            color = "#438bd6"		
-			
-	[[Solar2021]]
-        title = Solar Radiation & UV Index
-		subtitle = Daily Average for 2021
-		year_specific = 2021
-    	type = column
-	    aggregate_type = avg
+            color = "#268bd2"
+
+	[[Solar]]
 		aggregate_interval = 86400	#86400 = 1 day
+	    aggregate_type = avg
+        subtitle = "Daily Average for Solar Radiation & UV"
+        time_length = year
+        title = "This Year"
+        type = column
         [[[radiation]]]
            name = Solar Radiation
            zIndex = 1
            color = "#ffc83f"
+        [[[maxSolarRad]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            observation_type = maxSolarRad
+            zIndex = 0
         [[[UV]]]
             yAxis = 1
             yaxis_min = 0
@@ -547,180 +524,223 @@ colors = "#268bd2, #90ed7d, #f7a35c, #d33682, #8085e9, #e4d354, #f15c80, #8085e8
             yAxis_label = "UV Index"
             name = UV Index
             zIndex = 2
+            
+#   Start of annual section to copy for previous years - remember to change the year everywhere (12 places)
 
-	# end of section to be copied
-	
-	# then 2020
-	
     [[RainTemperature2020]]
-        title = "2020 Rainfall & Temperature"
-        subtitle = "for all months in 2020"
-		year_specific = 2020
-        [[[outTemp]]]
-            zIndex = 2
-            name = Max Temperature
+        subtitle = "Rainfall & Temperature"
+        title = "2020"
+        type = spline
+        year_specific = 2020
+        [[[outTemp_max2020]]]
 			aggregate_type = max
-			yAxis_label = Temperature (°C)
             color = "#fc0404"
+            name = Max Temperature
+            observation_type = outTemp
+			yAxis_label = Temperature (°C)
+            yAxis_max = 45
+            yAxis_min = -15
+            zIndex = 2
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[outTemp_min]]]
+        [[[outTemp_min2020]]]
+            aggregate_type = min
+            color = "#90ed7d"	# was "#173c6a"
             name = Min Temperature
             observation_type = outTemp
-            aggregate_type = min
-            zIndex = 2
-            color = "#90ed7d"	# was "#173c6a"
+            yAxis_max = 45
+            yAxis_min = -15
+            zIndex = 1
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[rainTotal]]]
+        [[[rainTotal2020]]]
+            color = "#438bd6"
             name = Rain Total
+            observation_type = rainTotal
             type = column
             yAxis = 1
             zIndex = 0
-            color = "#438bd6"		
-			
+
 	[[Solar2020]]
-        title = Solar Radiation & UV Index
-		subtitle = Daily Average for 2020
-		year_specific = 2020
-    	type = column
-	    aggregate_type = avg
 		aggregate_interval = 86400	#86400 = 1 day
-        [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
+	    aggregate_type = avg
+        subtitle = "Daily Average for Solar Radiation & UV"
+        title = "2020"
+        type = column
+        year_specific = 2020
+        [[[radiation2020]]]
            color = "#ffc83f"
-        [[[UV]]]
+           name = Solar Radiation
+           observation_type = radiation
+           yAxis = 0
+           zIndex = 1
+        [[[maxSolarRad2020]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            observation_type = maxSolarRad
+            zIndex = 0
+        [[[UV2020]]]
+            color = "#90ed7d"
+            name = UV Index
+            observation_type = UV
             yAxis = 1
+            yAxis_label = "UV Index"
             yaxis_min = 0
             yaxis_max = 12
-            color = "#90ed7d"
-            yAxis_label = "UV Index"
-            name = UV Index
             zIndex = 2
 
-	# end of section to be copied
-	
-	# then 2019
-	
+#   End of annual section to copy
+
+#   Start of annual section to copy - remember to change the year everywhere!
+
     [[RainTemperature2019]]
-        title = "2019 Rainfall & Temperature"
-        subtitle = "for all months in 2019"
-		year_specific = 2019
-        [[[outTemp]]]
-            zIndex = 2
-            name = Max Temperature
+        subtitle = "Rainfall & Temperature"
+        title = "2019"
+        type = spline
+        year_specific = 2019
+        [[[outTemp_max2019]]]
 			aggregate_type = max
-			yAxis_label = Temperature (°C)
             color = "#fc0404"
+            name = Max Temperature
+            observation_type = outTemp
+			yAxis_label = Temperature (°C)
+            yAxis_max = 45
+            yAxis_min = -15
+            zIndex = 2
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[outTemp_min]]]
+        [[[outTemp_min2019]]]
+            aggregate_type = min
+            color = "#90ed7d"	# was "#173c6a"
             name = Min Temperature
             observation_type = outTemp
-            aggregate_type = min
-            zIndex = 2
-            color = "#90ed7d"	# was "#173c6a"
+            yAxis_max = 45
+            yAxis_min = -15
+            zIndex = 1
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[rainTotal]]]
+        [[[rainTotal2019]]]
+            color = "#438bd6"
             name = Rain Total
+            observation_type = rainTotal
             type = column
             yAxis = 1
             zIndex = 0
-            color = "#438bd6"		
-			
+
 	[[Solar2019]]
-        title = Solar Radiation & UV Index
-		subtitle = Daily Average for 2019
-		year_specific = 2019
-    	type = column
-	    aggregate_type = avg
 		aggregate_interval = 86400	#86400 = 1 day
-        [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
+	    aggregate_type = avg
+        subtitle = "Daily Average for Solar Radiation & UV"
+        title = "2019"
+        type = column
+        year_specific = 2019
+        [[[radiation2019]]]
            color = "#ffc83f"
-        [[[UV]]]
+           name = Solar Radiation
+           observation_type = radiation
+           yAxis = 0
+           zIndex = 1
+        [[[maxSolarRad2019]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            observation_type = maxSolarRad
+            zIndex = 0
+        [[[UV2019]]]
+            color = "#90ed7d"
+            name = UV Index
+            observation_type = UV
             yAxis = 1
+            yAxis_label = "UV Index"
             yaxis_min = 0
             yaxis_max = 12
-            color = "#90ed7d"
-            yAxis_label = "UV Index"
-            name = UV Index
             zIndex = 2
 
-	# end of section to be copied
-		
+#   End of annual section to copy
+
+
 [OverallSummary]
 	# Overall Summary across all years
 	
-    title = "Summary for all years"
-    show_button = true
-    button_text = All Years
-	generate = monthly
-	
-    type = spline
-	time_length = all
-    aggregate_type = max
-    aggregate_interval = 86400 # 1 day
+    aggregate_interval = 86400  #86400 # 1 day
+    button_text = "All Years"
     gapsize = 86400
-    xAxis_groupby = month
+    generate = monthly
+    show_button = true
+	time_length = all
+    title = "Summary for all years"
+    type = spline
     xAxis_categories = 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    xAxis_groupby = month
 
     [[RainTemperatureAll]]
-        title = "Rainfall & Temperature By Month"
+        title = "Rainfall & Average (max/min) Temperature"
         subtitle = "for all months in all years"
-        [[[outTemp]]]
-            zIndex = 2
-            name = Max Temperature
-			yAxis_label = Temperature (°C)
+        [[[outTemp_max_All]]]
+            aggregate_type = max
             color = "#fc0404"
+            name = Max Temperature
+            observation_type = outTemp
+			yAxis_label = Temperature (°C)
+            yAxis_max = 30
+            yAxis_min = -10
+            zIndex = 2
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[outTemp_min]]]
+        [[[outTemp_min_All]]]
+            aggregate_type = min
+            color = "#90ed7d"	# was "#173c6a"
             name = Min Temperature
             observation_type = outTemp
-            aggregate_type = min
+            yAxis_max = 30
+            yAxis_min = -10
             zIndex = 2
-            color = "#90ed7d"	# was "#173c6a"
             [[[[marker]]]]
                 enabled = true
                 radius = 4
-        [[[rainTotal]]]
+        [[[rainTotal_All]]]
+            aggregate_type = avg
+            color = "#438bd6"		
             name = Rain Total
+            observation_type = rainTotal
             type = column
             yAxis = 1
             zIndex = 0
-            color = "#438bd6"		
 
 	[[SolarAll]]
-        title = Solar Radiation & UV Index
-		subtitle = "Daily Average for all years"
-		type = column
-		aggregate_type = avg		
 		aggregate_interval = 86400	#86400 = 1 day
-        [[[radiation]]]
-           name = Solar Radiation
-           zIndex = 1
+		aggregate_type = avg		
+ 		subtitle = "Daily Average for all years"
+        title = Solar Radiation & UV Index
+		type = column
+        [[[radiation_All]]]
            color = "#ffc83f"
-        [[[UV]]]
-            yAxis = 1
-            yaxis_min = 0
-            yaxis_max = 12
+           name = Solar Radiation
+           observation_type = radiation
+           zIndex = 1
+        [[[maxSolarRad_All]]]
+            color = "#f7f2b4"
+            name = Theoretical Max Solar Radiation
+            observation_type = maxSolarRad
+            zIndex = 0
+        [[[UV_All]]]
             color = "#90ed7d"
-            yAxis_label = "UV Index"
             name = UV Index
+            observation_type = UV
+            yAxis = 1
+            yAxis_label = "UV Index"
+            yaxis_min = 0
+            yaxis_max = 4
             zIndex = 2
 
     [[rainYearTotals]]
-        title = Rainfall by Year
-		subtitle = for all years
+        aggregate_type = avg
+		subtitle = "for all years"
+        title = "Rainfall by Year"
 		type = column
         xAxis_groupby = year
 		xAxis_categories = '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'
@@ -728,6 +748,7 @@ colors = "#268bd2, #90ed7d, #f7a35c, #d33682, #8085e9, #e4d354, #f15c80, #8085e8
             name = Rain Total
 
 	[[roseplt]]
-		title = Wind Rose
-		subtitle = for all years
+		subtitle = "for all years"
+		title = "Wind Rose"
 		[[[windRose]]]
+
