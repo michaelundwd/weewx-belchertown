@@ -1,5 +1,7 @@
 #errorCatcher Echo
 ##
+## # mju modifications to handle nexus 10 display - Mar 2021
+##
 ## Specifying an encoding of UTF-8 is usually safe, but if your text is 
 ## actually in Latin-1, then you should replace the string "UTF-8" with "latin-1"
 ## If you do this, you should also change the 'Content-Type' metadata below.
@@ -178,30 +180,64 @@
             
                 <!-- Top bar with city and share -->
                 <div class="wx-stn-info-container">
-                    <div class="wx-stn-name">
-                        <h1>$obs.label.home_page_header</h1>                    
-                    </div>
-                    <div class="wx-stn-info">
-                        $obs.label.powered_by
-                    </div>
-                    <div class="clear"></div>
-                    <!-- Updated time ago -->
-                    <div class="updated-wrapper">
-                        <div class="onlineMarkerOuter">
-                            <span class="loadingMarker" style="display:none"></span>
-                            <span class="onlineMarker" style="display:none"></span>
-                            <span class="offlineMarker" style="display:none"></span>
+
+                    <!-- nexus10-logo-area copied from header title-area is normally hidden, and displays dark-image only for Nexus -->
+                    <div class="nexus10-logo-area" style="display:none">
+                        <a href="$relative_url/">
+                            <img src="$Extras.logo_image_dark" id="logo_image" alt="$head_title">
+                        </a>
+                    </div>                  
+
+                    <div class="nexus10-stn-name-updated-area">
+                        <div class="wx-stn-name" display="inline-block">
+                            <h1>$obs.label.home_page_header</h1>                    
                         </div>
-                        <div class="updated"></div><!-- AJAX moment.js -->
+                    
+                        <div class="wx-stn-info">
+                            $obs.label.powered_by
+                        </div>
+                        <div class="clear"></div>
+                        <!-- Updated time ago -->
+                        <div class="updated-wrapper">
+                            <div class="onlineMarkerOuter">
+                                <span class="loadingMarker" style="display:none"></span>
+                                <span class="onlineMarker" style="display:none"></span>
+                                <span class="offlineMarker" style="display:none"></span>
+                            </div>
+                            <div class="updated"></div><!-- AJAX moment.js -->
+                        </div>
+                        #if $social_html != ""
+                        $social_html
+                        #end if
+                        <div class="clear"></div>
+                        <div class="last-updated-alert" style="display:none;"></div><!-- AJAX moment.js -->
+                        #if $Extras.has_key("forecast_alert_enabled") and $Extras.forecast_alert_enabled == '1'
+                        <div class="wx-stn-alert"><span class="wx-stn-alert-text"></span></div><!-- AJAX -->
+                        #end if
+                    
                     </div>
-                    #if $social_html != ""
-                    $social_html
-                    #end if
-                    <div class="clear"></div>
-                    <div class="last-updated-alert" style="display:none;"></div><!-- AJAX moment.js -->
-                    #if $Extras.has_key("forecast_alert_enabled") and $Extras.forecast_alert_enabled == '1'
-                    <div class="wx-stn-alert"><span class="wx-stn-alert-text"></span></div><!-- AJAX -->
-                    #end if
+
+                    <!-- this widget area from header is normally hidden, only displayed for nexus 10 via css -->
+                    <div class="widget-area nexus10-widget-area" style="display:none">
+                        <section id="nav_menu">
+                            <div class="widget-wrap">
+                                <nav class="nav-header" itemscope itemtype="https://schema.org/SiteNavigationElement">
+                                    <ul id="menu-menu" class="menu genesis-nav-menu">
+                                        <!-- class = current-menu-item -->
+                                        <li class="menu-item menu-item-home"><a href="$relative_url" itemprop="url"><span itemprop="name">$obs.label.nav_home</span></a></li>
+                                        #if $Extras.has_key('highcharts_enabled') and $Extras.highcharts_enabled == '1'
+                                        <li class="menu-item menu-item-1"><a href="$relative_url/graphs" itemprop="url"><span itemprop="name">$obs.label.nav_graphs</span></a></li>
+                                        #end if
+                                        <li class="menu-item menu-item-2"><a href="$relative_url/records" itemprop="url"><span itemprop="name">$obs.label.nav_records</span></a></li>
+                                        <li class="menu-item menu-item-3"><a href="$relative_url/reports" itemprop="url"><span itemprop="name">$obs.label.nav_reports</span></a></li>
+                                        <li class="menu-item menu-item-4"><a href="$relative_url/about" itemprop="url"><span itemprop="name">$obs.label.nav_about</span></a></li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </section>
+                    </div>
+                    
+
                 </div>
                 
                 <!-- First row with temperature, observation data and radar -->

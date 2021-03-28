@@ -3,7 +3,7 @@
  This website was originally created in WordPress on Genesis WP. 
  A lot of this CSS here is from the Genesis WP Child Theme.
  License URI: http://www.gnu.org/licenses/gpl-2.0.html 
- mju version for Nexus 10 - Feb 2021 
+ mju version for Nexus 10 - Mar 2021 
 */
 
 /* ## Baseline Normalize
@@ -2072,9 +2072,47 @@ input:checked + .slider:before {
 
 /*  Nexus 10 1280*800 landscape */
 @media only screen and (width: 1280px) and (height: 800px) and (orientation: landscape) {
-    .site-header {
+    .site-header, .wx-stn-info {
         display: none !important;
     }
+    
+    .widget-area {
+        width: 504px !important;
+        float: right !important;
+        height: 60px !important;
+    }
+    
+    .wx-stn-info-container {
+        height: 93px;
+        padding-bottom: 0px;
+    }
+
+    .nexus10-widget-area {
+        display: inline !important;
+    }
+    
+    .nexus10-logo-area {
+        display: block !important;
+        float: left !important;
+        padding-top: 5px;
+        width: 150px !important;
+    }
+    
+    .nexus10-stn-name-updated-area {
+        width: 500px !important;
+        display: inline-block !important;
+        padding-top: 5px;
+    }
+
+    .nexus-observations-area {
+        padding-left: 35px;
+        padding-top: 5px;
+    }
+
+    .genesis-nav-menu a {
+        padding: 18px 24px;
+    }
+
 }
 
 @media only screen and (max-width: 800px) {

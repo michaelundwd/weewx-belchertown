@@ -137,7 +137,7 @@ type = line
     aggregate_interval = 86400
     button_text = "Today"
 	exporting = 1
-    gapsize = 300
+    gapsize = 600           # This should be your archive_interval from weewx.conf. mju makes it 2 intervals to skip missing single reading
 	show_button = true
     time_length = today
     title = Today since Midnight
@@ -225,8 +225,8 @@ type = line
 
     aggregate_interval = 86400
     button_text = Yesterday
-    gapsize = 300 # This should be your archive_interval from weewx.conf. Standard is 5 minutes
-    generate = hourly
+    gapsize = 600           # This should be your archive_interval from weewx.conf. mju makes it 2 intervals to skip missing single reading
+    generate = daily        # sufficient as yesterday's readings do not change over the course of a day
 	show_button = true
     time_ago = 1
     time_length = days_ago
@@ -393,7 +393,7 @@ type = line
     aggregate_interval = 86400 # 1 day
     aggregate_type = max
     button_text = 365 days
-    gapsize = 86400 # 1 day in iseconds
+    gapsize = 86400 # 1 day in seconds
     generate = daily
 	show_button = true
     title = Last 365 days
@@ -450,12 +450,12 @@ type = line
             yAxis_max = 14
             yAxis_min = 0
 
-[AnnualSummaries]
+[annual]
     aggregate_interval = 86400 # 1 day
     aggregate_type = max
     button_text = "Annual"
     gapsize = 86400
-    generate = monthly
+    generate = daily
     show_button = true
     time_length = year_specific
     title = "Annual Summaries"
@@ -662,7 +662,7 @@ type = line
 #   End of annual section to copy
 
 
-[OverallSummary]
+[summary]
 	# Overall Summary across all years
 	
     aggregate_interval = 86400  #86400 # 1 day
@@ -677,12 +677,13 @@ type = line
     xAxis_groupby = month
 
     [[RainTemperatureAll]]
-        title = "Rainfall & Average (max/min) Temperature"
+        title = "Average Temperature and Rainfall"
         subtitle = "for all months in all years"
         [[[outTemp_max_All]]]
-            aggregate_type = max
+            aggregate_type = avg
+            average_type = max
             color = "#fc0404"
-            name = Max Temperature
+            name = Avg Max Temperature
             observation_type = outTemp
 			yAxis_label = Temperature (°C)
             yAxis_max = 30
@@ -692,9 +693,10 @@ type = line
                 enabled = true
                 radius = 4
         [[[outTemp_min_All]]]
-            aggregate_type = min
+            aggregate_type = avg
+            average_type = min
             color = "#90ed7d"	# was "#173c6a"
-            name = Min Temperature
+            name = Avg Min Temperature
             observation_type = outTemp
             yAxis_max = 30
             yAxis_min = -10
@@ -704,9 +706,10 @@ type = line
                 radius = 4
         [[[rainTotal_All]]]
             aggregate_type = avg
+            average_type = sum
             color = "#438bd6"		
-            name = Rain Total
-            observation_type = rainTotal
+            name = Avg Monthly Rainfall
+            observation_type = rain
             type = column
             yAxis = 1
             zIndex = 0
