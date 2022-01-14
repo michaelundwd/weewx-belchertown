@@ -2,7 +2,7 @@
 # SKIN CONFIGURATION FILE                                                     #
 # Copyright (c) 2010 Tom Keffer <tkeffer@gmail.com>                           #
 # Updated for the Belchertown Skin by Pat O'Brien, 2019                       #
-# Updated for Lordship Weather by Michael Underwood (# mju)- Feb 2021   	  #
+# Updated for Lordship Weather by Michael Underwood (# mju)- Jan 2022   	  #
 ###############################################################################
 
 [Extras]
@@ -40,11 +40,11 @@
     highcharts_thousands = "auto"
         
     # MQTT Websockets defaults
-    mqtt_websockets_enabled = 0
-    mqtt_websockets_host = ""
-    mqtt_websockets_port = 1883
+    mqtt_websockets_enabled = 1                                                 # mju - was 0
+    mqtt_websockets_host = //broker.emqx.io
+    mqtt_websockets_port = 8083
     mqtt_websockets_ssl = 0
-    mqtt_websockets_topic = ""
+    mqtt_websockets_topic = "weather/lordshipsg6/#"                             # mju - # to collect archive and loop
     disconnect_live_website_visitor = 1800000
 
     # Show an alert if the page updated timestamp is older than expected with this setting. Does not apply to MQTT Websocket enabled websites
@@ -54,7 +54,7 @@
     last_updated_alert_threshold = 1800
 
     # If mqtt_websockets_enabled is set to 0, but want the page to full reload on an interval, specify this below in milliseconds. 300000 = 5 minutes
-    webpage_autorefresh = 300000												# mju - was 0
+    webpage_autorefresh = 0												        # mju - was 300000 for autorefresh before mqtt enabled
 
     # Image Reload Section.
     # Set reload_hook_images to 1 to enable, then set the number of *seconds* for each section to reload.
@@ -64,7 +64,7 @@
     # af = index_hook_after_forecast.inc
     # as = index_hook_after_snapshot.inc
     # ac = index_hook_after_charts.inc
-    reload_hook_images = 0
+    reload_hook_images = 1
     reload_images_radar = 300
     reload_images_hook_asi = -1
     reload_images_hook_af = -1
@@ -155,7 +155,7 @@
         nav_about       = About
 
         # Default page headers
-        home_page_header        = "Letchworth Garden City Weather Conditions"	# mju  - was "My Station"
+        home_page_header        = "Current Weather Conditions"	                # mju  - was "My Station"
         graphs_page_header      = "Weather Observation Graphs"
         records_page_header     = "Weather Observation Records"
         reports_page_header     = "Weather Observation Reports"
@@ -728,6 +728,10 @@
         current    = %x %X
         ephem_day  = %X
         ephem_year = %x %X
+
+    [[TimeZone]]
+        # The time zone in 'Area/Location' format. e. g. America/New_York
+        time_zone  = ""
 
     [[Ordinates]]
         # The ordinal directions. The last one should be for no wind direction

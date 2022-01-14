@@ -1651,12 +1651,12 @@ p.entry-meta {
 }
 
 .mph { 
-	padding-top: 5px !important;
+	padding-top: 10px !important;
 	font-size: 18px !important;
 }
 
 .beaufort {
-    padding-top: 10px !important;
+    padding-top: 8px !important;
 	font-size:18px;
 }
 

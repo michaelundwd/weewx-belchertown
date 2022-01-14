@@ -19,7 +19,7 @@ import sys
 import syslog
 import time
 from collections import OrderedDict
-from math import asin, atan2, cos, degrees, pi, radians, sin, sqrt
+from math import asin, atan2, cos, degrees, radians, sin, sqrt
 from re import match
 
 import configobj
@@ -37,7 +37,6 @@ from weeutil.weeutil import (
     archiveSpanSpan,
     archiveWeekSpan,
     archiveYearSpan,
-    isStartOfDay,
     startOfDay,
     to_bool,
     to_float,
@@ -91,12 +90,12 @@ else:
 
 
 # Print version in syslog for easier troubleshooting
-VERSION = "1.3b1"
+VERSION = "1.2"
 loginf("version %s" % VERSION)
 
 # Define these as global so they can be used in both the search list extension
 # and custom graphs section
-aqi = ""
+aqi = 0
 aqi_category = ""
 aqi_time = 0
 aqi_location = ""
@@ -283,12 +282,7 @@ class getData(SearchList):
             - calendar.timegm(time.gmtime(time.mktime(moment_js_stop_struct)))
         ) / 60
 
-        try:
-            moment_js_tz = self.generator.skin_dict["Units"]["TimeZone"].get("time_zone")
-        except KeyError:
-            moment_js_tz = ""
-
-# Highcharts UTC offset is the opposite of normal. Positive values are
+        # Highcharts UTC offset is the opposite of normal. Positive values are
         # west, negative values are east of UTC.
         # https://api.highcharts.com/highcharts/time.timezoneOffset Multiplying
         # by -1 will reverse the number sign and keep 0 (not -0).
@@ -455,8 +449,6 @@ class getData(SearchList):
         # the radar_html which did not have lat/lon set previously.
         lat = self.generator.config_dict["Station"]["latitude"]
         lon = self.generator.config_dict["Station"]["longitude"]
-        radar_width = self.generator.skin_dict["Extras"]["radar_width"]
-        radar_height = self.generator.skin_dict["Extras"]["radar_height"]
         if "radar_zoom" in self.generator.skin_dict["Extras"]:
             zoom = self.generator.skin_dict["Extras"]["radar_zoom"]
         else:
@@ -472,33 +464,25 @@ class getData(SearchList):
         # Set default radar html code, and override with user-specified value
         if self.generator.skin_dict["Extras"].get("radar_html") == "":
             if self.generator.skin_dict["Extras"].get("aeris_map") == "1":
-                radar_html = '<img style="object-fit:cover;width:{}px;height:{}px" src="https://maps.aerisapi.com/{}_{}/flat,water-depth,counties:60,rivers,interstates:60,admin-cities,alerts-severe:50:blend(darken),radar:blend(darken)/{}x{}/{},{},{}/current.png"></img>'.format(
-                    radar_width,
-                    radar_height,
+                radar_html = '<img style="object-fit:cover;width:650px;height:360px" src="https://maps.aerisapi.com/{}_{}/flat,water-depth,counties:60,rivers,interstates:60,admin-cities,alerts-severe:50:blend(darken),radar:blend(darken)/650x360/{},{},{}/current.png"></img>'.format(
                     self.generator.skin_dict["Extras"]["forecast_api_id"],
                     self.generator.skin_dict["Extras"]["forecast_api_secret"],
-                    radar_width,
-                    radar_height,
                     lat,
                     lon,
                     zoom,
                 )
             else:
-                radar_html = '<iframe width="{}px" height="{}px" src="https://embed.windy.com/embed2.html?lat={}&lon={}&zoom={}&level=surface&overlay=radar&menu=&message=true&marker={}&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat={}&detailLon={}&metricWind=&metricTemp=&radarRange=-1" frameborder="0"></iframe>'.format(
-                    radar_width, radar_height, lat, lon, zoom, marker, lat, lon
+                radar_html = '<iframe width="650" height="360" src="https://embed.windy.com/embed2.html?lat={}&lon={}&zoom={}&level=surface&overlay=radar&menu=&message=true&marker={}&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat={}&detailLon={}&metricWind=&metricTemp=&radarRange=-1" frameborder="0"></iframe>'.format(
+                    lat, lon, zoom, marker, lat, lon
                 )
         else:
             radar_html = self.generator.skin_dict["Extras"]["radar_html"]
 
-        if self.generator.skin_dict["Extras"].get("radar_html_dark") == "":
+        if self.generator.skin_dict["Extras"].get("radar_html_dark") is None:
             if self.generator.skin_dict["Extras"].get("aeris_map") == "1":
-                radar_html_dark = '<img style="object-fit:cover;width:{}px;height:{}px" src="https://maps.aerisapi.com/{}_{}/flat-dk,water-depth-dk,counties:60,rivers,interstates:60,admin-cities-dk,alerts-severe:50:blend(lighten),radar:blend(lighten)/{}x{}/{},{},{}/current.png"></img>'.format(
-                    radar_width,
-                    radar_height,
+                radar_html_dark = '<img style="object-fit:cover;height:360px;width:650px" src="https://maps.aerisapi.com/{}_{}/flat-dk,water-depth-dk,counties:60,rivers,interstates:60,admin-cities-dk,alerts-severe:50:blend(lighten),radar:blend(lighten)/650x360/{},{},{}/current.png"></img>'.format(
                     self.generator.skin_dict["Extras"]["forecast_api_id"],
                     self.generator.skin_dict["Extras"]["forecast_api_secret"],
-                    radar_width,
-                    radar_height,
                     lat,
                     lon,
                     zoom,
@@ -522,7 +506,7 @@ class getData(SearchList):
 
         date_time = "%s/%s/%s 00:00:00" % (now.month, now.day, now.year)
         today_start_epoch = int(time.mktime(time.strptime(date_time, pattern)))
-
+        
         # Setup the converter
         # Get the target unit nickname (something like 'US' or 'METRIC'):
         target_unit_nickname = self.generator.config_dict["StdConvert"]["target_unit"]
@@ -651,85 +635,69 @@ class getData(SearchList):
 
         # All Time - Largest Daily Temperature Range Conversions
         # Max temperature
-        if at_outTemp_max_range_query is not None:
-            at_outTemp_max_range_max_tuple = (
-                at_outTemp_max_range_query[3],
-                outTemp_unit,
-                "group_temperature",
-            )
-            at_outTemp_max_range_max = (
-                outTemp_round
-                % self.generator.converter.convert(at_outTemp_max_range_max_tuple)[0]
-            )
-            # Min temperature for this day
-            at_outTemp_max_range_min_tuple = (
-                at_outTemp_max_range_query[2],
-                outTemp_unit,
-                "group_temperature",
-            )
-            at_outTemp_max_range_min = (
-                outTemp_round
-                % self.generator.converter.convert(at_outTemp_max_range_min_tuple)[0]
-            )
-            # Largest Daily Temperature Range total
-            at_outTemp_max_range_total = outTemp_round % (
-                float(at_outTemp_max_range_max) - float(at_outTemp_max_range_min)
-            )
-            # Replace the SQL Query output with the converted values
-            at_outTemp_range_max = [
-                at_outTemp_max_range_query[0],
-                locale.format("%g", float(at_outTemp_max_range_total)),
-                locale.format("%g", float(at_outTemp_max_range_min)),
-                locale.format("%g", float(at_outTemp_max_range_max)),
-            ]
-        else:
-            at_outTemp_range_max = [
-                calendar.timegm(time.gmtime()),
-                locale.format("%.1f", 0),
-                locale.format("%.1f", 0),
-                locale.format("%.1f", 0),
-            ]
+        at_outTemp_max_range_max_tuple = (
+            at_outTemp_max_range_query[3],
+            outTemp_unit,
+            "group_temperature",
+        )
+        at_outTemp_max_range_max = (
+            outTemp_round
+            % self.generator.converter.convert(at_outTemp_max_range_max_tuple)[0]
+        )
+        # Min temperature for this day
+        at_outTemp_max_range_min_tuple = (
+            at_outTemp_max_range_query[2],
+            outTemp_unit,
+            "group_temperature",
+        )
+        at_outTemp_max_range_min = (
+            outTemp_round
+            % self.generator.converter.convert(at_outTemp_max_range_min_tuple)[0]
+        )
+        # Largest Daily Temperature Range total
+        at_outTemp_max_range_total = outTemp_round % (
+            float(at_outTemp_max_range_max) - float(at_outTemp_max_range_min)
+        )
+        # Replace the SQL Query output with the converted values
+        at_outTemp_range_max = [
+            at_outTemp_max_range_query[0],
+            locale.format("%g", float(at_outTemp_max_range_total)),
+            locale.format("%g", float(at_outTemp_max_range_min)),
+            locale.format("%g", float(at_outTemp_max_range_max)),
+        ]
 
         # All Time - Smallest Daily Temperature Range Conversions
         # Max temperature for this day
-        if at_outTemp_min_range_query is not None:
-            at_outTemp_min_range_max_tuple = (
-                at_outTemp_min_range_query[3],
-                outTemp_unit,
-                "group_temperature",
-            )
-            at_outTemp_min_range_max = (
-                outTemp_round
-                % self.generator.converter.convert(at_outTemp_min_range_max_tuple)[0]
-            )
-            # Min temperature for this day
-            at_outTemp_min_range_min_tuple = (
-                at_outTemp_min_range_query[2],
-                outTemp_unit,
-                "group_temperature",
-            )
-            at_outTemp_min_range_min = (
-                outTemp_round
-                % self.generator.converter.convert(at_outTemp_min_range_min_tuple)[0]
-            )
-            # Smallest Daily Temperature Range total
-            at_outTemp_min_range_total = outTemp_round % (
-                float(at_outTemp_min_range_max) - float(at_outTemp_min_range_min)
-            )
-            # Replace the SQL Query output with the converted values
-            at_outTemp_range_min = [
-                at_outTemp_min_range_query[0],
-                locale.format("%g", float(at_outTemp_min_range_total)),
-                locale.format("%g", float(at_outTemp_min_range_min)),
-                locale.format("%g", float(at_outTemp_min_range_max)),
-            ]
-        else:
-            at_outTemp_range_min = [
-                calendar.timegm(time.gmtime()),
-                locale.format("%.1f", 0),
-                locale.format("%.1f", 0),
-                locale.format("%.1f", 0),
-            ]
+        at_outTemp_min_range_max_tuple = (
+            at_outTemp_min_range_query[3],
+            outTemp_unit,
+            "group_temperature",
+        )
+        at_outTemp_min_range_max = (
+            outTemp_round
+            % self.generator.converter.convert(at_outTemp_min_range_max_tuple)[0]
+        )
+        # Min temperature for this day
+        at_outTemp_min_range_min_tuple = (
+            at_outTemp_min_range_query[2],
+            outTemp_unit,
+            "group_temperature",
+        )
+        at_outTemp_min_range_min = (
+            outTemp_round
+            % self.generator.converter.convert(at_outTemp_min_range_min_tuple)[0]
+        )
+        # Smallest Daily Temperature Range total
+        at_outTemp_min_range_total = outTemp_round % (
+            float(at_outTemp_min_range_max) - float(at_outTemp_min_range_min)
+        )
+        # Replace the SQL Query output with the converted values
+        at_outTemp_range_min = [
+            at_outTemp_min_range_query[0],
+            locale.format("%g", float(at_outTemp_min_range_total)),
+            locale.format("%g", float(at_outTemp_min_range_min)),
+            locale.format("%g", float(at_outTemp_min_range_max)),
+        ]
 
         # Rain lookups
         # Find the group_name for rain in database
@@ -783,18 +751,18 @@ class getData(SearchList):
         driver = self.generator.config_dict["DatabaseTypes"][database_type]["driver"]
         if driver == "weedb.sqlite":
             year_rainiest_month_sql = (
-                'SELECT strftime("%%m", datetime(dateTime, "unixepoch", "localtime")) as month, SUM( sum ) as total FROM archive_day_rain WHERE strftime("%%Y", datetime(dateTime, "unixepoch", "localtime")) = "%s" GROUP BY month ORDER BY total DESC LIMIT 1;'
+                'SELECT strftime("%%m", datetime(dateTime, "unixepoch")) as month, ROUND( SUM( sum ), 2 ) as total FROM archive_day_rain WHERE strftime("%%Y", datetime(dateTime, "unixepoch")) = "%s" GROUP BY month ORDER BY total DESC LIMIT 1;'
                 % time.strftime("%Y", time.localtime(time.time()))
             )
-            at_rainiest_month_sql = 'SELECT strftime("%m", datetime(dateTime, "unixepoch", "localtime")) as month, strftime("%Y", datetime(dateTime, "unixepoch", "localtime")) as year, SUM( sum ) as total FROM archive_day_rain GROUP BY month, year ORDER BY total DESC LIMIT 1;'
+            at_rainiest_month_sql = 'SELECT strftime("%m", datetime(dateTime, "unixepoch")) as month, strftime("%Y", datetime(dateTime, "unixepoch")) as year, ROUND( SUM( sum ), 2 ) as total FROM archive_day_rain GROUP BY month, year ORDER BY total DESC LIMIT 1;'
             year_rain_data_sql = (
-                'SELECT dateTime, sum FROM archive_day_rain WHERE strftime("%%Y", datetime(dateTime, "unixepoch", "localtime")) = "%s" AND count > 0;'
+                'SELECT dateTime, ROUND( sum, 2 ) FROM archive_day_rain WHERE strftime("%%Y", datetime(dateTime, "unixepoch")) = "%s" AND count > 0;'
                 % time.strftime("%Y", time.localtime(time.time()))
             )
             # The all stats from http://www.weewx.com/docs/customizing.htm
             # doesn't seem to calculate "Total Rainfall for" all time stat
             # correctly.
-            at_rain_highest_year_sql = 'SELECT strftime("%Y", datetime(dateTime, "unixepoch", "localtime")) as year, SUM( sum ) as total FROM archive_day_rain GROUP BY year ORDER BY total DESC LIMIT 1;'
+            at_rain_highest_year_sql = 'SELECT strftime("%Y", datetime(dateTime, "unixepoch")) as year, ROUND( SUM( sum ), 2 ) as total FROM archive_day_rain GROUP BY year ORDER BY total DESC LIMIT 1;'
         elif driver == "weedb.mysql":
             year_rainiest_month_sql = 'SELECT FROM_UNIXTIME( dateTime, "%%m" ) AS month, ROUND( SUM( sum ), 2 ) AS total FROM archive_day_rain WHERE year( FROM_UNIXTIME( dateTime ) ) = "{0}" GROUP BY month ORDER BY total DESC LIMIT 1;'.format(
                 time.strftime("%Y", time.localtime(time.time()))
@@ -1151,20 +1119,124 @@ class getData(SearchList):
 
             def aeris_icon(data):
                 # https://www.aerisweather.com/support/docs/api/reference/icon-list/
-                iconlist_file_path = os.path.join(
-                    self.generator.config_dict["WEEWX_ROOT"],
-                    self.generator.skin_dict["SKIN_ROOT"],
-                    self.generator.skin_dict.get("skin", ""),
-                    "images/aeris-icon-list.json",
-                )
-                if os.path.exists(iconlist_file_path):
-                    icon_name = data.split(".")[0]  # Remove .png
-                    with open(iconlist_file_path, "r") as dict:
-                        icon_dict = json.load(dict)
-                    return icon_dict[icon_name]
-                else:
-                    logerr("aeris-icon-list.json is missing in " + iconlist_file_path)
-                    return 'unknown'
+                icon_name = data.split(".")[0]  # Remove .png
+
+                icon_dict = {
+                    "blizzard": "snow",
+                    "blizzardn": "snow",
+                    "blowingsnow": "snow",
+                    "blowingsnown": "snow",
+                    "clear": "clear-day",
+                    "clearn": "clear-night",
+                    "cloudy": "cloudy",
+                    "cloudyn": "cloudy",
+                    "cloudyw": "cloudy",
+                    "cloudywn": "cloudy",
+                    "cold": "clear-day",
+                    "coldn": "clear-night",
+                    "drizzle": "rain",
+                    "drizzlen": "rain",
+                    "dust": "fog",
+                    "dustn": "fog",
+                    "fair": "mostly-clear-day",
+                    "fairn": "mostly-clear-night",
+                    "drizzlef": "rain",
+                    "fdrizzlen": "rain",
+                    "flurries": "sleet",
+                    "flurriesn": "sleet",
+                    "flurriesw": "sleet",
+                    "flurrieswn": "sleet",
+                    "fog": "fog",
+                    "fogn": "fog",
+                    "freezingrain": "rain",
+                    "freezingrainn": "rain",
+                    "hazy": "fog",
+                    "hazyn": "fog",
+                    "hot": "clear-day",
+                    "N/A ": "unknown",
+                    "mcloudy": "mostly-cloudy-day",
+                    "mcloudyn": "mostly-cloudy-night",
+                    "mcloudyr": "rain",
+                    "mcloudyrn": "rain",
+                    "mcloudyrw": "rain",
+                    "mcloudyrwn": "rain",
+                    "mcloudys": "snow",
+                    "mcloudysn": "snow",
+                    "mcloudysf": "snow",
+                    "mcloudysfn": "snow",
+                    "mcloudysfw": "snow",
+                    "mcloudysfwn": "snow",
+                    "mcloudysw": "mostly-cloudy-day",
+                    "mcloudyswn": "mostly-cloudy-night",
+                    "mcloudyt": "thunderstorm",
+                    "mcloudytn": "thunderstorm",
+                    "mcloudytw": "thunderstorm",
+                    "mcloudytwn": "thunderstorm",
+                    "mcloudyw": "mostly-cloudy-day",
+                    "mcloudywn": "mostly-cloudy-night",
+                    "na": "unknown",
+                    "pcloudy": "partly-cloudy-day",
+                    "pcloudyn": "partly-cloudy-night",
+                    "pcloudyr": "rain",
+                    "pcloudyrn": "rain",
+                    "pcloudyrw": "rain",
+                    "pcloudyrwn": "rain",
+                    "pcloudys": "snow",
+                    "pcloudysn": "snow",
+                    "pcloudysf": "snow",
+                    "pcloudysfn": "snow",
+                    "pcloudysfw": "snow",
+                    "pcloudysfwn": "snow",
+                    "pcloudysw": "partly-cloudy-day",
+                    "pcloudyswn": "partly-cloudy-night",
+                    "pcloudyt": "thunderstorm",
+                    "pcloudytn": "thunderstorm",
+                    "pcloudytw": "thunderstorm",
+                    "pcloudytwn": "thunderstorm",
+                    "pcloudyw": "partly-cloudy-day",
+                    "pcloudywn": "partly-cloudy-night",
+                    "rain": "rain",
+                    "rainn": "rain",
+                    "rainandsnow": "rain",
+                    "rainandsnown": "rain",
+                    "raintosnow": "rain",
+                    "raintosnown": "rain",
+                    "rainw": "rain",
+                    "showers": "rain",
+                    "showersn": "rain",
+                    "showersw": "rain",
+                    "showerswn": "rain",
+                    "sleet": "sleet",
+                    "sleetn": "sleet",
+                    "sleetsnow": "sleet",
+                    "sleetsnown": "sleet",
+                    "smoke": "fog",
+                    "smoken": "fog",
+                    "snow": "snow",
+                    "snown": "snow",
+                    "snoww": "snow",
+                    "snowwn": "snow",
+                    "snowshowers": "snow",
+                    "snowshowersn": "snow",
+                    "snowshowersw": "snow",
+                    "snowshowerswn": "snow",
+                    "snowtorain": "snow",
+                    "snowtorainn": "snow",
+                    "sunny": "mostly-clear-day",
+                    "sunnyn": "mostly-clear-night",
+                    "sunnyw": "mostly-clear-day",
+                    "sunnywn": "mostly-clear-night",
+                    "tstorm": "thunderstorm",
+                    "tstormn": "thunderstorm",
+                    "tstorms": "thunderstorm",
+                    "tstormsn": "thunderstorm",
+                    "tstormsw": "thunderstorm",
+                    "tstormswn": "thunderstorm",
+                    "wind": "wind",
+                    "wintrymix": "sleet",
+                    "wintrymixn": "sleet",
+                }
+                return icon_dict[icon_name]
 
             forecast_lang = self.generator.skin_dict["Extras"]["forecast_lang"].lower()
             if self.generator.skin_dict["Extras"]["forecast_aeris_use_metar"] == "1":
@@ -1412,45 +1484,105 @@ class getData(SearchList):
                 cloud_cover = ""
 
             try:
-                if (
-                    len(data["aqi"][0]["response"]) > 0
-                ):
-                    aqi = data["aqi"][0]["response"][0]["periods"][0]["aqi"]
-                    aqi_category = data["aqi"][0]["response"][0]["periods"][0]["category"]
-                    aqi_time = data["aqi"][0]["response"][0]["periods"][0]["timestamp"]
-                    aqi_location = data["aqi"][0]["response"][0]["place"]["name"].title()
-                elif (
-                    data["aqi"][0]["error"]["code"] == "warn_no_data"
-                ):
-                    aqi = "No Data"
-                    aqi_category = ""
-                    aqi_time = 0
-                    aqi_location = ""
+                aqi = data["aqi"][0]["response"][0]["periods"][0]["aqi"]
+                aqi_category = data["aqi"][0]["response"][0]["periods"][0]["category"]
+                aqi_time = data["aqi"][0]["response"][0]["periods"][0]["timestamp"]
+                aqi_location = data["aqi"][0]["response"][0]["place"]["name"].title()
             except Exception as error:
                 logerr(
-                    "Error getting AQI from Aeris weather. The error was: %s" % (error)
+                    "Error getting AQI from Aeris weather. The error was:\n%s\n"
+                    "The response from the Aeris AQI server was:\n%s\n"
+                    "The URL being used is:\n%s" % (error, data["aqi"], aqi_url)
                 )
-                aqi = ""
-                aqi_category = ""
-                aqi_time = 0
-                aqi_location = ""
-                pass
 
+            # Substitute label names if defined in config files, to allow users
+            # to supply their own translations see
             # https://www.aerisweather.com/support/docs/api/reference/endpoints/airquality/
             if aqi_category == "good":
-                aqi_category = label_dict["aqi_good"]
+                if label_dict["aqi_good"] not in ("aqi_good", ""):
+                    aqi_category = label_dict["aqi_good"]
+                else:
+                    aqi_category = "good"
             elif aqi_category == "moderate":
-                aqi_category = label_dict["aqi_moderate"]
+                if label_dict["aqi_moderate"] not in ("aqi_moderate", ""):
+                    aqi_category = label_dict["aqi_moderate"]
+                else:
+                    aqi_category = "moderate"
             elif aqi_category == "usg":
-                aqi_category = label_dict["aqi_usg"]
+                if label_dict["aqi_usg"] not in ("aqi_usg", ""):
+                    aqi_category = label_dict["aqi_usg"]
+                else:
+                    aqi_category = "unhealthy for some"
             elif aqi_category == "unhealthy":
-                aqi_category = label_dict["aqi_unhealthy"]
+                if label_dict["aqi_unhealthy"] not in ("aqi_unhealthy", ""):
+                    aqi_category = label_dict["aqi_unhealthy"]
+                else:
+                    aqi_category = "unhealthy"
             elif aqi_category == "very unhealthy":
-                aqi_category = label_dict["aqi_very_unhealthy"]
+                if label_dict["aqi_very_unhealthy"] not in ("aqi_very_unhealthy", ""):
+                    aqi_category = label_dict["aqi_very_unhealthy"]
+                else:
+                    aqi_category = "very unhealthy"
             elif aqi_category == "hazardous":
-                aqi_category = label_dict["aqi_hazardous"]
+                if label_dict["aqi_hazardous"] not in ("aqi_hazardous", ""):
+                    aqi_category = label_dict["aqi_hazardous"]
+                else:
+                    aqi_category = "hazardous"
             else:
-                aqi_category = label_dict["aqi_unknown"]
+                aqi_category = "unknown"
+
+            if label_dict["beaufort0"] != "beaufort0":
+                beaufort0 = label_dict["beaufort0"]
+            else:
+                beaufort0 = "calm"
+            if label_dict["beaufort1"] != "beaufort1":
+                beaufort1 = label_dict["beaufort1"]
+            else:
+                beaufort1 = "light air"
+            if label_dict["beaufort2"] != "beaufort2":
+                beaufort2 = label_dict["beaufort2"]
+            else:
+                beaufort2 = "light breeze"
+            if label_dict["beaufort3"] != "beaufort3":
+                beaufort3 = label_dict["beaufort3"]
+            else:
+                beaufort3 = "gentle breeze"
+            if label_dict["beaufort4"] != "beaufort4":
+                beaufort4 = label_dict["beaufort4"]
+            else:
+                beaufort4 = "moderate breeze"
+            if label_dict["beaufort5"] != "beaufort5":
+                beaufort5 = label_dict["beaufort5"]
+            else:
+                beaufort5 = "fresh breeze"
+            if label_dict["beaufort6"] != "beaufort6":
+                beaufort6 = label_dict["beaufort6"]
+            else:
+                beaufort6 = "strong breeze"
+            if label_dict["beaufort7"] != "beaufort7":
+                beaufort7 = label_dict["beaufort7"]
+            else:
+                beaufort7 = "near gale"
+            if label_dict["beaufort8"] != "beaufort8":
+                beaufort8 = label_dict["beaufort8"]
+            else:
+                beaufort8 = "gale"
+            if label_dict["beaufort9"] != "beaufort9":
+                beaufort9 = label_dict["beaufort9"]
+            else:
+                beaufort9 = "strong gale"
+            if label_dict["beaufort10"] != "beaufort10":
+                beaufort10 = label_dict["beaufort10"]
+            else:
+                beaufort10 = "storm"
+            if label_dict["beaufort11"] != "beaufort11":
+                beaufort11 = label_dict["beaufort11"]
+            else:
+                beaufort11 = "violent storm"
+            if label_dict["beaufort12"] != "beaufort12":
+                beaufort12 = label_dict["beaufort12"]
+            else:
+                beaufort12 = "hurricane force"
 
             if (
                 len(data["current"][0]["response"]) > 0
@@ -1512,6 +1644,19 @@ class getData(SearchList):
             visibility = "N/A"
             visibility_unit = ""
             cloud_cover = ""
+            beaufort0 = ""
+            beaufort1 = ""
+            beaufort2 = ""
+            beaufort3 = ""
+            beaufort4 = ""
+            beaufort5 = ""
+            beaufort6 = ""
+            beaufort7 = ""
+            beaufort8 = ""
+            beaufort9 = ""
+            beaufort10 = ""
+            beaufort11 = ""
+            beaufort12 = ""
 
         # ==============================================================================
         # Earthquake Data
@@ -1546,26 +1691,6 @@ class getData(SearchList):
                 earthquake_url = (
                     "https://api.geonet.org.nz/quake?MMI=%s"
                     % self.generator.skin_dict["Extras"]["geonet_mmi"]
-                )
-            elif self.generator.skin_dict["Extras"]["earthquake_server"] == "ReNaSS":
-                # Calculate min/max latitude and min/max longitude from radius and station location. https://stackoverflow.com/a/23118314
-                lat = float(latitude)
-                long = float(longitude)
-                radiusInKm = int(earthquake_maxradiuskm)
-
-                kmInLongitudeDegree = 111.320 * cos( lat / 180.0 * pi)
-
-                deltaLat = radiusInKm / 111.1
-                deltaLong = radiusInKm / kmInLongitudeDegree
-
-                minLat = lat - deltaLat
-                maxLat = lat + deltaLat
-                minLong = long - deltaLong
-                maxLong = long + deltaLong
-
-                earthquake_url = (
-                    "https://api.franceseisme.fr/fdsnws/event/1/query?eventtype=earthquake&minmagnitude=2&minlatitude=%.2f&minlongitude=%.2f&maxlatitude=%.2f&maxlongitude=%.2f&format=json&limit=1&orderby=time"
-                    % (minLat, minLong, maxLat, maxLong) 
                 )
             earthquake_is_stale = False
 
@@ -1659,41 +1784,19 @@ class getData(SearchList):
                 if self.generator.skin_dict["Extras"]["earthquake_server"] == "USGS":
                     eqtime = eqdata["features"][0]["properties"]["time"] / 1000
                     equrl = eqdata["features"][0]["properties"]["url"]
-                    if distance_unit == "km":
+                    if distance_unit == "km":                   
                         eqplace = eqdata["features"][0]["properties"]["place"]
-                    else:  # assume miles
+                    else:       # assume miles
                         try:
-                            eqmatched = match(
-                                "(?P<distance>[0-9]*\.?[0-9]+) km(?P<rest>.*)$",
-                                eqdata["features"][0]["properties"]["place"],
-                            )
-                            eqdist_km = eqmatched.group("distance")
-                            eqdist_miles = round(float(eqdist_km) / 1.609, 1)
-                            eqplace = (
-                                str(eqdist_miles) + " miles" + eqmatched.group("rest")
-                            )
+                            eqmatched=re.match('(?P<distance>[0-9]*\.?[0-9]+) km(?P<rest>.*)$',
+                                eqdata["features"][0]["properties"]["place"])
+                            eqdist_km = eqmatched.group('distance')
+                            eqdist_miles = round(float(eqdist_km) / 1.609,1)
+                            eqplace = str(eqdist_miles) + " miles" + eqmatched.group('rest')
                         except:
                             eqplace = eqdata["features"][0]["properties"]["place"]
                     eqmag = locale.format(
                         "%g", float(eqdata["features"][0]["properties"]["mag"])
-                    )
-                elif (
-                    self.generator.skin_dict["Extras"]["earthquake_server"] == "ReNaSS"
-                ):
-                    eqtime = eqdata["features"][0]["properties"]["time"]
-                    # convert time to UNIX format
-                    eqtime = datetime.datetime.strptime(eqtime, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    eqtime = int(
-                        (eqtime - datetime.datetime(1970, 1, 1)).total_seconds()
-                    )
-                    if match("fr_.*", system_locale):
-                        equrl = eqdata["features"][0]["properties"]["url"]["fr"]
-                        eqplace = eqdata["features"][0]["properties"]["description"]["fr"]
-                    else:
-                        equrl = eqdata["features"][0]["properties"]["url"]["en"]
-                        eqplace = eqdata["features"][0]["properties"]["description"]["en"]
-                    eqmag = format(
-                         eqdata["features"][0]["properties"]["mag"], ".1f"
                     )
                 elif (
                     self.generator.skin_dict["Extras"]["earthquake_server"] == "GeoNet"
@@ -1769,15 +1872,12 @@ class getData(SearchList):
         if isinstance(station_observations, list) is False:
             station_observations = station_observations.split()
         current_stamp = manager.lastGoodStamp()
-        current_record = manager.getRecord(current_stamp)
         current = weewx.tags.CurrentObj(
             db_lookup,
             station_obs_binding,
             current_stamp,
             self.generator.formatter,
             self.generator.converter,
-            None,
-            current_record
         )
         for obs in station_observations:
             if "data_binding" in obs:
@@ -1792,15 +1892,12 @@ class getData(SearchList):
                     station_obs_binding
                 )
                 current_stamp = obs_binding_manager.lastGoodStamp()
-                current_record = obs_binding_manager.getRecord(current_stamp)
                 current = weewx.tags.CurrentObj(
                     db_lookup,
                     station_obs_binding,
                     current_stamp,
                     self.generator.formatter,
                     self.generator.converter,
-                    None,
-                    current_record
                 )
 
             if obs == "visibility":
@@ -1838,8 +1935,8 @@ class getData(SearchList):
                 obs_output = ""
             elif obs == "cloud_cover":
                 obs_output = cloud_cover
-            elif obs == "aqi":
-                obs_output = aqi
+                if label_dict["cloud_cover"] == "cloud_cover":
+                    label_dict["cloud_cover"] = "Cloud Cover"
             else:
                 obs_output = getattr(current, obs)
                 if "?" in str(obs_output):
@@ -2005,7 +2102,6 @@ class getData(SearchList):
             "belchertown_version": VERSION,
             "belchertown_debug": belchertown_debug,
             "moment_js_utc_offset": moment_js_utc_offset,
-            "moment_js_tz": moment_js_tz,
             "highcharts_timezoneoffset": highcharts_timezoneoffset,
             "system_locale": system_locale,
             "system_locale_js": system_locale_js,
@@ -2062,19 +2158,19 @@ class getData(SearchList):
             "aqi": aqi,
             "aqi_category": aqi_category,
             "aqi_location": aqi_location,
-            "beaufort0": label_dict["beaufort0"],
-            "beaufort1": label_dict["beaufort1"],
-            "beaufort2": label_dict["beaufort2"],
-            "beaufort3": label_dict["beaufort3"],
-            "beaufort4": label_dict["beaufort4"],
-            "beaufort5": label_dict["beaufort5"],
-            "beaufort6": label_dict["beaufort6"],
-            "beaufort7": label_dict["beaufort7"],
-            "beaufort8": label_dict["beaufort8"],
-            "beaufort9": label_dict["beaufort9"],
-            "beaufort10": label_dict["beaufort10"],
-            "beaufort11": label_dict["beaufort11"],
-            "beaufort12": label_dict["beaufort12"],
+            "beaufort0": beaufort0,
+            "beaufort1": beaufort1,
+            "beaufort2": beaufort2,
+            "beaufort3": beaufort3,
+            "beaufort4": beaufort4,
+            "beaufort5": beaufort5,
+            "beaufort6": beaufort6,
+            "beaufort7": beaufort7,
+            "beaufort8": beaufort8,
+            "beaufort9": beaufort9,
+            "beaufort10": beaufort10,
+            "beaufort11": beaufort11,
+            "beaufort12": beaufort12,
         }
 
         # Finally, return our extension as a list:
@@ -2288,10 +2384,10 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                 # gapsize has to be in milliseconds. Take the graphs.conf value
                 # and multiply by 1000
                 gapsize = plot_options.get(
-                    "gapsize", 300
+                    "gapsize", 300000
                 )  # Default to 5 minutes in millis
                 if gapsize:
-                    output[chart_group][plotname]["options"]["gapsize"] = int(gapsize) * 1000
+                    output[chart_group][plotname]["options"]["gapsize"] = gapsize * 1000
 
                 connectNulls = plot_options.get("connectNulls", "false")
                 output[chart_group][plotname]["options"]["connectNulls"] = connectNulls
@@ -2363,12 +2459,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     start_at_midnight = to_bool(
                         line_options.get("start_at_midnight", False)
                     )  # Should our timespan start at midnight?
-                    start_at_whole_hour = to_bool(
-                        line_options.get("start_at_whole_hour", False)
-                    )  # Should our timespan start at a whole hour?
-                    start_at_beginning_of_month = to_bool(
-                        line_options.get("start_at_beginning_of_month", False)
-                    )  # Should our timespan start at the beginning of a month?
                     if time_length == "today":
                         minstamp, maxstamp = archiveDaySpan(timespan.stop)
                     elif time_length == "week":
@@ -2528,13 +2618,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                             minstamp = plotgen_ts - time_length
                         maxstamp = plotgen_ts
 
-                    if start_at_whole_hour:
-                        minstamp -= minstamp % 3600
-                    
-                    if start_at_beginning_of_month:
-                        start_ts, stop_ts = archiveMonthSpan(minstamp)
-                        minstamp = start_ts
-
                     # Find if this chart is using a new database binding.
                     # Default to the binding set in plot_options
                     binding = line_options.get("data_binding", binding)
@@ -2561,31 +2644,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                         else:
                             name = label_dict[observation_type]
 
-                    # Look for aggregation type:
-                    aggregate_type = line_options.get("aggregate_type")
-                    if aggregate_type in (None, "", "None", "none"):
-                        # No aggregation specified.
-                        aggregate_type = aggregate_interval = None
-                    else:
-                        try:
-                            # Aggregation specified. Get the interval.
-                            aggregate_interval = weeutil.weeutil.nominal_spans(
-                                line_options.get(
-                                "aggregate_interval"
-                            ))
-                        except KeyError:
-                            syslog.syslog(
-                                syslog.LOG_ERR,
-                                "HighchartsJsonGenerator: aggregate interval required for aggregate type %s"
-                                % aggregate_type,
-                            )
-                            syslog.syslog(
-                                syslog.LOG_ERR,
-                                "HighchartsJsonGenerator: line type %s skipped"
-                                % observation_type,
-                            )
-                            continue
-                            
                     # Get the unit label
                     if observation_type == "rainTotal":
                         obs_label = "rain"
@@ -2598,8 +2656,8 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                         obs_label = observation_type
                     unit_label = line_options.get(
                         "yAxis_label_unit",
-                        self.formatter.get_label_string(
-                            self.converter.getTargetUnit(obs_label,aggregate_type)[0]
+                        weewx.units.get_label_string(
+                            self.formatter, self.converter, obs_label
                         ),
                     )
 
@@ -2626,11 +2684,29 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                         "yAxis_label"
                     ] = yAxis_label
 
-                    # Check for average type:
-                    average_type = line_options.get("average_type")
-                    if average_type in (None, "", "None", "none"):
-                        # No average type specified so force to none.
-                        average_type = None
+                    # Look for aggregation type:
+                    aggregate_type = line_options.get("aggregate_type")
+                    if aggregate_type in (None, "", "None", "none"):
+                        # No aggregation specified.
+                        aggregate_type = aggregate_interval = None
+                    else:
+                        try:
+                            # Aggregation specified. Get the interval.
+                            aggregate_interval = line_options.as_int(
+                                "aggregate_interval"
+                            )
+                        except KeyError:
+                            syslog.syslog(
+                                syslog.LOG_ERR,
+                                "HighchartsJsonGenerator: aggregate interval required for aggregate type %s"
+                                % aggregate_type,
+                            )
+                            syslog.syslog(
+                                syslog.LOG_ERR,
+                                "HighchartsJsonGenerator: line type %s skipped"
+                                % observation_type,
+                            )
+                            continue
 
                     # Mirrored charts
                     mirrored_value = line_options.get("mirrored_value", None)
@@ -2719,7 +2795,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                         maxstamp,
                         aggregate_type,
                         aggregate_interval,
-                        average_type,
                         time_length,
                         xAxis_groupby,
                         xAxis_categories,
@@ -2772,12 +2847,12 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
 
             # Write the output to the JSON file
             with open(json_filename, mode="w") as jf:
-                jf.write(json.dumps(output[chart_group], indent=4))
+                jf.write(json.dumps(output[chart_group]))
 
             # Save the graphs.conf to a json file for future debugging
             chart_json_filename = html_dest_dir + "/graphs.json"
             with open(chart_json_filename, mode="w") as cjf:
-                cjf.write(json.dumps(self.chart_dict, indent=4))
+                cjf.write(json.dumps(self.chart_dict))
 
     def get_observation_data(
         self,
@@ -2788,7 +2863,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
         end_ts,
         aggregate_type,
         aggregate_interval,
-        average_type,
         time_length,
         xAxis_groupby,
         xAxis_categories,
@@ -2816,10 +2890,9 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
 
             # Get windDir observations.
             obs_lookup = "windDir"
-            (time_start_vt, time_stop_vt, windDir_vt) = weewx.xtypes.get_series(
-                obs_lookup,
+            (time_start_vt, time_stop_vt, windDir_vt) = archive.getSqlVectors(
                 TimeSpan(start_ts, end_ts),
-                archive,
+                obs_lookup,
                 aggregate_type,
                 aggregate_interval,
             )
@@ -2831,10 +2904,9 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
 
             # Get windSpeed observations.
             obs_lookup = "windSpeed"
-            (time_start_vt, time_stop_vt, windSpeed_vt) = weewx.xtypes.get_series(
-                obs_lookup,
+            (time_start_vt, time_stop_vt, windSpeed_vt) = archive.getSqlVectors(
                 TimeSpan(start_ts, end_ts),
-                archive,
+                obs_lookup,
                 aggregate_type,
                 aggregate_interval,
             )
@@ -3205,10 +3277,9 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
             # Get min values
             aggregate_type = "min"
             try:
-                (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                    obs_lookup,
+                (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                     TimeSpan(start_ts, end_ts),
-                    archive,
+                    obs_lookup,
                     aggregate_type,
                     aggregate_interval,
                 )
@@ -3217,18 +3288,15 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     "Error trying to use database binding %s to graph observation %s. "
                     "Error was: %s." % (binding, obs_lookup, e)
                 )
-
-            self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
 
             min_obs_vt = self.converter.convert(obs_vt)
 
             # Get max values
             aggregate_type = "max"
             try:
-                (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                    obs_lookup,
+                (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                     TimeSpan(start_ts, end_ts),
-                    archive,
+                    obs_lookup,
                     aggregate_type,
                     aggregate_interval,
                 )
@@ -3237,18 +3305,15 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     "Error trying to use database binding %s to graph observation %s. "
                     "Error was: %s." % (binding, obs_lookup, e)
                 )
-
-            self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
 
             max_obs_vt = self.converter.convert(obs_vt)
 
             # Get avg values
             aggregate_type = "avg"
             try:
-                (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                    obs_lookup,
+                (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                     TimeSpan(start_ts, end_ts),
-                    archive,
+                    obs_lookup,
                     aggregate_type,
                     aggregate_interval,
                 )
@@ -3257,8 +3322,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     "Error trying to use database binding %s to graph observation %s. "
                     "Error was: %s." % (binding, obs_lookup, e)
                 )
-
-            self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
 
             avg_obs_vt = self.converter.convert(obs_vt)
 
@@ -3302,10 +3365,9 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
             # Get min values
             obs_lookup = "windSpeed"
             try:
-                (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                    obs_lookup,
+                (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                     TimeSpan(start_ts, end_ts),
-                    archive,
+                    obs_lookup,
                     aggregate_type,
                     aggregate_interval,
                 )
@@ -3315,17 +3377,14 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     "Error was: %s." % (binding, obs_lookup, e)
                 )
 
-            self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
-            
             min_obs_vt = self.converter.convert(obs_vt)
 
             # Get max values
             obs_lookup = "windGust"
             try:
-                (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                    obs_lookup,
+                (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                     TimeSpan(start_ts, end_ts),
-                    archive,
+                    obs_lookup,
                     aggregate_type,
                     aggregate_interval,
                 )
@@ -3335,8 +3394,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                     "Error was: %s." % (binding, obs_lookup, e)
                 )
 
-            self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
-            
             max_obs_vt = self.converter.convert(obs_vt)
 
             obs_unit = max_obs_vt[1]
@@ -3368,12 +3425,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                 aggregate_type = "max"
         else:
             obs_lookup = observation
-            
-        #   Special aggregation_subtype measures to enable average rainfall, max and min temperatures to be calculated
-        
-        if aggregate_type == "avg" and observation == "avgRainfall" and aggregate_interval == 86400:
-            obs_lookup = "rain"
-            obs_label = "Rainfall"
 
         if xAxis_groupby or len(xAxis_categories) >= 1:
             # Setup the converter - for some reason self.converter doesn't work
@@ -3412,218 +3463,51 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
             if aggregate_type is None:
                 aggregate_type = "sum"
 
-            if isinstance(time_length, int):
-                order_sql = ' ORDER BY dateTime ASC'
-            else:
-                order_sql = ''
-
-            # Special case for time_length = all, force to use complete days only
-            if time_length == "all":
-                start_ts = startOfDay(archive.firstGoodStamp()) + 86400
-                end_ts = startOfDay(archive.lastGoodStamp())
-
-            # Set up subquery groupby clause
-            if xAxis_groupby == "year": subqry_groupby = '"%Y"'
-            elif xAxis_groupby == "month": subqry_groupby = '"%Y%m"'
-            elif xAxis_groupby == "day": subqry_groupby = '"%Y%m%d"'
-            elif xAxis_groupby == "hour": subqry_groupby = '"%Y%m%d%H"'
-            else: subqry_groupby = ''
-                            
             if driver == "weedb.sqlite":
-                # Use daily summaries where possible - MUST BE FOR WHOLE DAYS determined by start and stop times otherwise use archive
-                if xAxis_groupby != "hour" and isStartOfDay(start_ts) and isStartOfDay(end_ts) and end_ts - start_ts > 0 :  # 1 or more exact days
-                    # Avg is a special case
-                    if aggregate_type == "avg":
-                        # Avg(sum) requires a subquery with the correct group by clause
-                        if average_type is not None and average_type == "sum":
-                            sql_lookup = 'SELECT dt1 AS {0}, ' \
-                                         'AVG(obs1) AS obs ' \
-                                         'FROM (SELECT strftime("{1}", datetime(dateTime, "unixepoch", "localtime")) AS dt1, sum(sum) AS obs1 ' \
-                                                'FROM archive_day_{2} WHERE dateTime >= {3} AND dateTime < {4} '\
-                                                'GROUP BY strftime({5}, datetime(dateTime, "unixepoch", "localtime"))) ' \
-                                         'GROUP BY {0}{6};'.format(
-                                xAxis_groupby,
-                                strformat,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                subqry_groupby,
-                                order_sql
-                            )
-                        # avg cases with an average_type
-                        elif average_type is not None:
-                            sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) AS {1}, ' \
-                                         '{2}({3}) AS obs ' \
-                                         'FROM archive_day_{4}  WHERE dateTime >= {5} AND dateTime < {6} ' \
-                                         'GROUP BY {1}{7};'.format(
-                                strformat,
-                                xAxis_groupby,
-                                aggregate_type,
-                                average_type,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                order_sql
-                            )
-                        # remaining avg cases without an average_type use weighted average
-                        else:
-                            sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) AS {1}, ' \
-                                         'SUM(wsum)/SUM(sumtime) AS obs ' \
-                                         'FROM archive_day_{2}  WHERE dateTime >= {3} AND dateTime < {4} ' \
-                                         'GROUP BY {1}{5};'.format(
-                                strformat,
-                                xAxis_groupby,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                order_sql
-                            )
-                    # other aggregate_type cases use direct interrogation of daily summary
-                    else:
-                        sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) AS {1}, ' \
-                                     '{2}({2}) AS obs ' \
-                                     'FROM archive_day_{3}  ' \
-                                     'WHERE dateTime >= {4} AND dateTime < {5} GROUP BY {1}{6};'.format(
-                            strformat,
-                            xAxis_groupby,
-                            aggregate_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            order_sql
-                        )
+                if isinstance(time_length, int):
+                    sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) as {1}, IFNULL({2}({3}),0) as obs, dateTime FROM archive WHERE dateTime >= {4} AND dateTime <= {5} GROUP BY {6} ORDER BY dateTime ASC;'.format(
+                        strformat,
+                        xAxis_groupby,
+                        aggregate_type,
+                        obs_lookup,
+                        start_ts,
+                        end_ts,
+                        xAxis_groupby,
+                    )
                 else:
-                    # archive access with no average_type
-                    if average_type is None:
-                        sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) as {1}, ' \
-                                     'IFNULL({2}({3}),0) AS obs, dateTime FROM archive ' \
-                                     'WHERE dateTime >= {4} AND dateTime < {5} GROUP BY {1}{6};'.format(
-                            strformat,
-                            xAxis_groupby,
-                            aggregate_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            order_sql
-                        )
-
-                    # average_type requiring a subquery
-                    else:
-                        sql_lookup = 'SELECT dt1 AS {0}, ' \
-                                     '{1}(obs1) AS obs ' \
-                                     'FROM (SELECT strftime("{2}", datetime(dateTime, "unixepoch", "localtime")) AS dt1, '\
-                                            'IFNULL({3}({4}),0) AS obs1 ' \
-                                            'FROM archive WHERE dateTime >= {5} AND dateTime < {6} '\
-                                            'GROUP BY strftime({7}, datetime(dateTime, "unixepoch", "localtime"))) ' \
-                                     'GROUP BY {0}{8};'.format(
-                            xAxis_groupby,
-                            aggregate_type,
-                            strformat,
-                            average_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            subqry_groupby,
-                            order_sql
-                        )
-
+                    sql_lookup = 'SELECT strftime("{0}", datetime(dateTime, "unixepoch", "localtime")) as {1}, IFNULL({2}({3}),0) as obs FROM archive WHERE dateTime >= {4} AND dateTime <= {5} GROUP BY {6};'.format(
+                        strformat,
+                        xAxis_groupby,
+                        aggregate_type,
+                        obs_lookup,
+                        start_ts,
+                        end_ts,
+                        xAxis_groupby,
+                    )
             elif driver == "weedb.mysql":
-                # Use daily summaries where possible - MUST BE FOR WHOLE DAYS determined by start and stop times otherwise use archive
-                if xAxis_groupby != "hour" and isStartOfDay(start_ts) and isStartOfDay(end_ts) and end_ts - start_ts > 0 :  # 1 or more exact days
-                    # Avg is a special case
-                    if aggregate_type == "avg":
-                        # Avg(sum) requires a subquery with the correct group by clause
-                        if average_type is not None and average_type == "sum":
-                            sql_lookup = 'SELECT dt1 AS {0}, ' \
-                                         'AVG(obs1) AS obs ' \
-                                         'FROM (SELECT FROM_UNIXTIME( dateTime, "%{1}" ) AS dt1, sum(sum) AS obs1 ' \
-                                                'FROM archive_day_{2} WHERE dateTime >= {3} AND dateTime < {4} '\
-                                                'GROUP BY strftime({5}, datetime(dateTime, "unixepoch", "localtime"))) ' \
-                                         'GROUP BY {0}{6};'.format(
-                                xAxis_groupby,
-                                strformat,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                subqry_groupby,
-                                order_sql
-                            )
-                        # avg cases with an average_type
-                        elif average_type is not None:
-                            sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) AS {1}, ' \
-                                         '{2}({3}) AS obs ' \
-                                         'FROM archive_day_{4}  WHERE dateTime >= {5} AND dateTime < {6} ' \
-                                         'GROUP BY {1}{7};'.format(
-                                strformat,
-                                xAxis_groupby,
-                                aggregate_type,
-                                average_type,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                order_sql
-                            )
-                        # remaining avg cases without an average_type use weighted average
-                        else:
-                            sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) AS {1}, ' \
-                                         'SUM(wsum)/SUM(sumtime) AS obs ' \
-                                         'FROM archive_day_{2}  WHERE dateTime >= {3} AND dateTime < {4} ' \
-                                         'GROUP BY {1}{5};'.format(
-                                strformat,
-                                xAxis_groupby,
-                                obs_lookup,
-                                start_ts,
-                                end_ts,
-                                order_sql
-                            )
-                    # other aggregate_type cases use direct interrogation of daily summary
-                    else:
-                        sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) AS {1}, ' \
-                                     '{2}({2}) AS obs ' \
-                                     'FROM archive_day_{3}  ' \
-                                     'WHERE dateTime >= {4} AND dateTime < {5} GROUP BY {1}{6};'.format(
-                            strformat,
-                            xAxis_groupby,
-                            aggregate_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            order_sql
-                        )
+                if isinstance(time_length, int):
+                    sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) AS {1}, IFNULL({2}({3}),0) as obs, dateTime FROM archive WHERE dateTime >= {4} AND dateTime <= {5} GROUP BY {6} ORDER BY dateTime ASC;'.format(
+                        strformat,
+                        xAxis_groupby,
+                        aggregate_type,
+                        obs_lookup,
+                        start_ts,
+                        end_ts,
+                        xAxis_groupby,
+                    )
                 else:
-                    # archive access with no average_type
-                    if average_type is None:
-                        sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) as {1}, ' \
-                                     'IFNULL({2}({3}),0) AS obs, dateTime FROM archive ' \
-                                     'WHERE dateTime >= {4} AND dateTime < {5} GROUP BY {1}{6};'.format(
-                            strformat,
-                            xAxis_groupby,
-                            aggregate_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            order_sql
-                        )
+                    sql_lookup = 'SELECT FROM_UNIXTIME( dateTime, "%{0}" ) AS {1}, IFNULL({2}({3}),0) as obs FROM archive WHERE dateTime >= {4} AND dateTime <= {5} GROUP BY {6};'.format(
+                        strformat,
+                        xAxis_groupby,
+                        aggregate_type,
+                        obs_lookup,
+                        start_ts,
+                        end_ts,
+                        xAxis_groupby,
+                    )
 
-                    # average_type requiring a subquery
-                    else:
-                        sql_lookup = 'SELECT dt1 AS {0}, ' \
-                                     '{1}(obs1) AS obs ' \
-                                     'FROM (SELECT FROM_UNIXTIME( dateTime, "%{2}" ) AS dt1, '\
-                                            'IFNULL({3}({4}),0) AS obs1 ' \
-                                            'FROM archive WHERE dateTime >= {5} AND dateTime < {6} '\
-                                            'GROUP BY strftime({7}, datetime(dateTime, "unixepoch", "localtime"))) ' \
-                                     'GROUP BY {0}{8};'.format(
-                            xAxis_groupby,
-                            aggregate_type,
-                            strformat,
-                            average_type,
-                            obs_lookup,
-                            start_ts,
-                            end_ts,
-                            subqry_groupby,
-                            order_sql
-                        )
+            #debugging for Arend
+            loginf(sql_lookup)
 
             # Setup values for the converter
             try:
@@ -3635,18 +3519,7 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                 obs_group = None
                 obs_unit_from_target_unit = None
 
-            # introduce test to catch any sql errors; a try / except sequence 
-            
-            try:
-                query = archive.genSql(sql_lookup)
-            except:
-                raise Warning(
-                    "SQL error in"
-                    "sql_lookup"
-                    "The error is: %s"
-                        % (error)                    
-                )
-                
+            query = archive.genSql(sql_lookup)
             for row in query:
                 xAxis_labels.append(row[0])
                 row_tuple = (row[1], obs_unit_from_target_unit, obs_group)
@@ -3677,10 +3550,9 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
 
         # Begin standard observation lookups
         try:
-            (time_start_vt, time_stop_vt, obs_vt) = weewx.xtypes.get_series(
-                obs_lookup,
+            (time_start_vt, time_stop_vt, obs_vt) = archive.getSqlVectors(
                 TimeSpan(start_ts, end_ts),
-                archive,
+                obs_lookup,
                 aggregate_type,
                 aggregate_interval,
             )
@@ -3690,8 +3562,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
                 % (binding, obs_lookup, e)
             )
 
-        self.insert_null_value_timestamps_to_end_ts(time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, aggregate_interval)
-        
         obs_vt = self.converter.convert(obs_vt)
 
         # Special handling for the rain.
@@ -3733,16 +3603,14 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
         # previous minute in the tooltip. (e.g. 4:59 instead of 5:00)
         # Everything else has it on the start time so we don't see the next day
         # in the tooltip (e.g. Jan 2 instead of Jan 1)
-        try:
-            if not aggregate_type:
-                point_timestamp = time_stop_vt
-            elif aggregate_interval and (
-                      aggregate_interval == 3600 or aggregate_interval==2629800):
-                point_timestamp = time_start_vt
-            else:
-                point_timestamp = ([(x+y)/2.0 for x,y in zip(time_start_vt[0],time_stop_vt[0])],time_start_vt[1],time_start_vt[2])
-        except Exception:
+        if (
+            time_length == "today"
+            or time_length == "timespan_specific"
+            or isinstance(time_length, int)
+        ):
             point_timestamp = time_stop_vt
+        else:
+            point_timestamp = time_start_vt
 
         # If the values are to be mirrored, we need to make them negative
         if mirrored_value:
@@ -3754,29 +3622,6 @@ class HighchartsJsonGenerator(weewx.reportengine.ReportGenerator):
         data = zip(time_ms, obs_round_vt)
 
         return data
-
-    def insert_null_value_timestamps_to_end_ts(self, time_start_vt, time_stop_vt, obs_vt, start_ts, end_ts, interval):
-        """
-        In weewx 4.5.1 xtypes.py was modified to not return any data points which didn't exist in the archive database.
-        This function adds the 'future' data points from the last timestamp in the list up until end_ts with None entries.
-        This means that graphs still have the option of showing a full day or month or year on the x axis depending on the time_length specfied.       
-        """
-        count = 0
-
-        if interval is not None:
-            try:
-                ts = time_start_vt[0][-1] + interval
-            except:
-                ts = start_ts
-
-            while ts < end_ts:
-                time_start_vt[0].append(ts)
-                time_stop_vt[0].append(ts)
-                ts = ts + interval
-                count = count + 1
-
-        for i in range(count):
-           obs_vt[0].append(None)
 
     def round_none(self, value, places):
         """Round value to 'places' places but also permit a value of None"""
