@@ -1,6 +1,7 @@
 #errorCatcher Echo
 ##
 ## # mju modifications to handle nexus 10 display - Mar 2021
+## # mju modifications to handle daylight hours - Jan 2022; assumes that almanac_extras = 1, so does not fully conform to Belchertown rules
 ##
 ## Specifying an encoding of UTF-8 is usually safe, but if your text is 
 ## actually in Latin-1, then you should replace the string "UTF-8" with "latin-1"
@@ -389,9 +390,12 @@
                                         <td colspan="2">
                                             <div class="row small-almanac">
                                                 #if $obs.label.sun_and_moon and $obs.label.sun_and_moon != ''
-                                                <div class="sun-moon-title">
-                                                    $obs.label.sun_and_moon
-                                                </div>
+												<div class="sun-moon-title">
+													$obs.label.sun_and_moon
+                                                #if $Extras.has_key("almanac_extras") and $Extras.almanac_extras == '1' and $almanac.hasExtras
+													<a href="#almanac" data-toggle="modal" data-target="#almanac"><div class = "sun-moon-details">$obs.label.almanac_more_details</div></a>
+                                                #end if
+												</div>
                                                 #end if
                                                 <div class="col-sm-5 sun">
                                                     <span class="sunrise-set-image"><img src="$relative_url/images/sunrise.png"></span><span class="sunrise-value"></span><!-- moment.js -->
@@ -410,28 +414,30 @@
                                                 </div>
                                                 <div class="clear"></div>
                                                 #if $Extras.has_key("almanac_extras") and $Extras.almanac_extras == '1' and $almanac.hasExtras
+                                                <!-- mju daylight change -->
+                                                <div class="daylight-change">
+													#include "daylight.inc"
+												</div>
                                                 <!-- Almanac Modal -->
-                                                <div class="sun-moon-modal"><a href="#almanac" data-toggle="modal" data-target="#almanac">$obs.label.almanac_more_details</a></div>
-                                                <!-- Almanac Modal -->
-                                                <div class="modal fade" id="almanac" tabindex="-1" role="dialog" aria-labelledby="almanac" aria-hidden="true">
-                                                    <div class="modal-dialog modal-lg" role="document">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                                <h4 class="modal-title" id="almanac">$obs.label.almanac_modal_title</h4>
-                                                            </div>
-                                                            <div class="almanac-extras-modal-body modal-body">
-                                                                #include "celestial.inc"
-                                                            </div><!-- AJAX -->
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-primary" data-dismiss="modal">$obs.label.close</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                #end if
+												<div class="modal fade" id="almanac" tabindex="-1" role="dialog" aria-labelledby="almanac" aria-hidden="true">
+													<div class="modal-dialog modal-lg" role="document">
+														<div class="modal-content">
+															<div class="modal-header">
+																<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+																	<span aria-hidden="true">&times;</span>
+																</button>
+																<h4 class="modal-title" id="almanac">$obs.label.almanac_modal_title</h4>
+															</div>
+															<div class="almanac-extras-modal-body modal-body">
+																#include "celestial.inc"
+															</div><!-- AJAX -->
+																<div class="modal-footer">
+																<button type="button" class="btn btn-primary" data-dismiss="modal">$obs.label.close</button>
+															</div>
+														</div>
+													</div>
+												</div>
+												#end if
                                             </div>
                                         </td>
                                     </tr>

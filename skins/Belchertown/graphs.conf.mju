@@ -146,7 +146,7 @@ type = line
 	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
-        [[[windchill]]]
+        [[[appTemp]]]
             color = "#f7a35c"
         [[[outTemp]]]
             name = Temperature
@@ -236,7 +236,7 @@ type = line
 	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
-        [[[windchill]]]
+        [[[appTemp]]]
             color = "#f7a35c"
         [[[outTemp]]]
             name = Temperature
@@ -291,7 +291,7 @@ type = line
 	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
-        [[[windchill]]]
+        [[[windchill]]]		#appTemp is rejected
             color = "#f7a35c"
         [[[outTemp]]]
             name = Temperature
@@ -347,7 +347,7 @@ type = line
 	[[temperature]] #re-ordered Feb 2021
         title = Temperature
         [[[dewpoint]]]
-        [[[windchill]]]
+        [[[windchill]]]		#appTemp is rejected
             color = "#f7a35c"
         [[[outTemp]]]
             name = Temperature

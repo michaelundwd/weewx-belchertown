@@ -3,7 +3,7 @@
  This website was originally created in WordPress on Genesis WP. 
  A lot of this CSS here is from the Genesis WP Child Theme.
  License URI: http://www.gnu.org/licenses/gpl-2.0.html 
- mju version for Nexus 10 - Mar 2021 
+ mju version for Nexus 10 - Mar 2021, for daylight - Jan 2022 
 */
 
 /* ## Baseline Normalize
@@ -1279,8 +1279,9 @@ p.entry-meta {
 }
 
 .updated {
-	display: inline-block;
+	/* was display: inline-block; changed to accommodate Nexus 10 display */
 	margin-bottom:5px;
+	width:800px;
 }
 
 .onlineMarkerOuter {
@@ -1695,7 +1696,21 @@ p.entry-meta {
 .sun-moon-title {
 	font-size:25px;
 	text-align:left;
-	padding-bottom: 10px;
+	padding-bottom: 5px;	/* was 10px, set to 5 to accommodate daylight hours */
+}
+
+.sun-moon-details, sun-moon-details:visited, sun-moon-details:hover, sun-moon-details:active {
+	color: #e5554e;
+	display: inline-block;
+	font-size: 20px;
+	text-decoration: none !important;
+}
+
+.sun-moon-details:hover {
+	color: #e5554e;
+	display: inline-block;
+	font-size: 20px;
+	text-decoration: underline !important;
 }
 
 .sun-moon-modal {
@@ -1703,6 +1718,12 @@ p.entry-meta {
     text-align: center;
     margin: 0 auto;
     display: block;
+}
+
+.daylight-change {
+	width: 100%;
+	text-align: left;
+	font-size: 15px;
 }
 
 .page .sun-moon-modal a {
